@@ -28,6 +28,14 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session_s
     session_state["is_model_speaking"] = True
     try:
         # 1. Speech-to-Text (ASR)
+        # Filter out quiet background static/clicks to prevent Whisper hallucinations (e.g. "Thank you")
+        total_rms = audioop.rms(speech_bytes, 2)
+        if total_rms < 450:
+            logger.info(f"ASR: Speech buffer volume too low (RMS={total_rms}). Ignoring to prevent Whisper hallucination.")
+            session_state["is_model_speaking"] = False
+            await websocket.send_json({"type": "state", "state": "READY"})
+            return
+            
         transcription = await asyncio.to_thread(ASRService.transcribe, speech_bytes)
         if not transcription or len(transcription.strip()) < 2:
             logger.info("ASR: Transcription too short or empty. Ignoring.")
@@ -51,7 +59,11 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session_s
             logger.error(f"Failed to build warm profile: {mem_err}")
             warm_profile_block = ""
             
-        final_instruction = SENTINEL_SYSTEM_INSTRUCTION
+        import datetime
+        current_dt = datetime.datetime.now().strftime("%A, %B %d, %Y, %I:%M %p")
+        time_context = f"\n\n[Current Local Time Context]\nTime: {current_dt}\nLocation: Anti Noob Media HQ (Home/Office)\n"
+        
+        final_instruction = SENTINEL_SYSTEM_INSTRUCTION + time_context
         if warm_profile_block:
             final_instruction += "\n\n" + warm_profile_block
             
@@ -75,12 +87,15 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session_s
             
         logger.info(f"Ollama response: {response_text}")
         
-        # Log full text to frontend
+        # Log full text to frontend (retains <think> blocks for visual display)
         await websocket.send_json({"type": "text", "data": response_text})
         
         # 3. Text-to-Speech (TTS)
+        # Strip thinking blocks from the text sent to the speaker
+        tts_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL).strip()
+        
         # Split response into sentences to generate TTS streams sequentially
-        sentences = re.split(r'(?<=[.!?])\s+', response_text)
+        sentences = re.split(r'(?<=[.!?])\s+', tts_text)
         sentences = [s.strip() for s in sentences if s.strip()]
         
         # We set speakingState to SPEAKING
@@ -129,7 +144,11 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session_
             logger.error(f"Failed to build warm profile: {mem_err}")
             warm_profile_block = ""
             
-        final_instruction = SENTINEL_SYSTEM_INSTRUCTION
+        import datetime
+        current_dt = datetime.datetime.now().strftime("%A, %B %d, %Y, %I:%M %p")
+        time_context = f"\n\n[Current Local Time Context]\nTime: {current_dt}\nLocation: Anti Noob Media HQ (Home/Office)\n"
+        
+        final_instruction = SENTINEL_SYSTEM_INSTRUCTION + time_context
         if warm_profile_block:
             final_instruction += "\n\n" + warm_profile_block
             
@@ -149,10 +168,15 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session_
             return
             
         logger.info(f"Ollama response: {response_text}")
+        
+        # Log full text to frontend (retains <think> blocks for visual display)
         await websocket.send_json({"type": "text", "data": response_text})
         
+        # Strip thinking blocks from the text sent to the speaker
+        tts_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL).strip()
+        
         # 2. Text-to-Speech (TTS)
-        sentences = re.split(r'(?<=[.!?])\s+', response_text)
+        sentences = re.split(r'(?<=[.!?])\s+', tts_text)
         sentences = [s.strip() for s in sentences if s.strip()]
         
         await websocket.send_json({"type": "state", "state": "READY"})
@@ -306,6 +330,33 @@ async def voice_websocket(websocket: WebSocket):
                             from app.runtime.runtime_service import runtime_service
                             asyncio.create_task(runtime_service.wake(websocket))
                             
+                    elif p_type == "turn_complete":
+                        logger.info("VAD: Client signaled turn complete.")
+                        if session_state.get("is_model_speaking"):
+                            logger.info("VAD: Already processing or speaking. Ignoring manual turn complete.")
+                            speech_buffer.clear()
+                            continue
+                            
+                        if len(speech_buffer) > 0:
+                            audio_turn_data = bytes(speech_buffer)
+                            speech_buffer.clear()
+                            session_state["is_user_speaking"] = False
+                            
+                            # Save a copy of the raw received audio for offline diagnostics
+                            try:
+                                import wave
+                                with wave.open("debug_speech.wav", "wb") as wf:
+                                    wf.setnchannels(1)
+                                    wf.setsampwidth(2)
+                                    # Use 16000 as the rate because client is now running at 16000Hz (or downsampled)
+                                    wf.setframerate(session_state.get("client_sample_rate") or 16000)
+                                    wf.writeframes(audio_turn_data)
+                                logger.info("VAD Diagnostics: Saved debug_speech.wav successfully.")
+                            except Exception as wav_err:
+                                logger.error(f"Failed to save debug WAV: {wav_err}")
+                                
+                            asyncio.create_task(process_user_turn(audio_turn_data, websocket, session_state))
+                            
                 except Exception as text_err:
                     logger.error(f"Error parsing json payload: {text_err}")
 
@@ -326,7 +377,10 @@ async def voice_websocket(websocket: WebSocket):
                         raw_audio, new_state = audioop.ratecv(raw_audio, 2, 1, client_rate, 16000, state)
                         session_state["audioop_state"] = new_state
                         
-                    # 2. Accumulate bytes for VAD (VAD processes in 512-sample/1024-byte blocks)
+                    # Always accumulate raw downsampled audio into speech_buffer for Whisper
+                    speech_buffer.extend(raw_audio)
+                    
+                    # Accumulate bytes for VAD (VAD processes in 512-sample/1024-byte blocks)
                     vad_accumulator.extend(raw_audio)
                     
                     while len(vad_accumulator) >= 1024:
@@ -336,12 +390,20 @@ async def voice_websocket(websocket: WebSocket):
                         # Process VAD probability
                         prob = vad.is_speech(chunk_to_vad)
                         
-                        if prob > 0.45:
+                        # Check amplitude to verify audio is not silent
+                        rms = audioop.rms(chunk_to_vad, 2)
+                        if rms > 150:
+                            logger.info(f"VAD Debug: prob={prob:.1f}, rms={rms}")
+                        
+                        if prob > 0.25:
                             # User is speaking
                             if not session_state["is_user_speaking"]:
                                 logger.info(f"VAD: Speech detected (prob={prob:.2f}). Starting capture.")
                                 session_state["is_user_speaking"] = True
                                 session_state["silence_chunks"] = 0
+                                # Clear leading silence/static buffer to keep transcription clean
+                                speech_buffer.clear()
+                                speech_buffer.extend(chunk_to_vad)
                                 
                                 # Interrupt model playback immediately if it is speaking
                                 if session_state["is_model_speaking"]:
@@ -349,13 +411,10 @@ async def voice_websocket(websocket: WebSocket):
                                     session_state["is_model_speaking"] = False
                                     await websocket.send_json({"type": "interrupt"})
                                     
-                            # Accumulate PCM audio for Whisper translation
-                            speech_buffer.extend(chunk_to_vad)
                             session_state["silence_chunks"] = 0
                         else:
                             # Silence
                             if session_state["is_user_speaking"]:
-                                speech_buffer.extend(chunk_to_vad)
                                 session_state["silence_chunks"] += 1
                                 
                                 # Detect speech boundary: 1.2s of silence (1.2 / 0.032 = 38 chunks)
@@ -363,6 +422,11 @@ async def voice_websocket(websocket: WebSocket):
                                     logger.info("VAD: Silence threshold met. User completed speech.")
                                     session_state["is_user_speaking"] = False
                                     
+                                    if session_state.get("is_model_speaking"):
+                                        logger.info("VAD: Already processing or speaking. Ignoring auto silence trigger.")
+                                        speech_buffer.clear()
+                                        continue
+                                        
                                     # Copy buffer and trigger local speech turn thread
                                     audio_turn_data = bytes(speech_buffer)
                                     speech_buffer.clear()

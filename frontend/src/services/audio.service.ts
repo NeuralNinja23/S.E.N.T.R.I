@@ -7,6 +7,7 @@ class AudioService {
   private activeSources = new Set<AudioBufferSourceNode>();
   private nextPlayTime = 0;
   private workletNode: any = null;
+  private isWorkletModuleAdded = false;
 
   playAudioChunk(arrayBuffer: ArrayBuffer, onStart: () => void, onEnded: () => void) {
     onStart();
@@ -67,7 +68,7 @@ class AudioService {
       this.mediaStream = stream;
 
       if (!this.recordingContext) {
-        this.recordingContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        this.recordingContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       } else if (this.recordingContext.state === "suspended") {
         await this.recordingContext.resume();
       }
@@ -82,10 +83,14 @@ class AudioService {
       console.log(`[Sentinel Audio] AudioContext actual sampleRate: ${audioContext.sampleRate}Hz — worklet will resample to 16000Hz`);
       const source = audioContext.createMediaStreamSource(stream);
 
-      try {
-        await audioContext.audioWorklet.addModule(`/pcm-processor.js?v=${Date.now()}`);
-      } catch (e) {
-        console.warn("AudioWorklet module already added or failed:", e);
+      if (!this.isWorkletModuleAdded) {
+        try {
+          await audioContext.audioWorklet.addModule("/pcm-processor.js");
+          this.isWorkletModuleAdded = true;
+          console.log("[Sentinel Audio] pcm-processor worklet module loaded successfully.");
+        } catch (e) {
+          console.warn("AudioWorklet module already added or failed:", e);
+        }
       }
 
       this.workletNode = new (window as any).AudioWorkletNode(audioContext, "pcm-processor");

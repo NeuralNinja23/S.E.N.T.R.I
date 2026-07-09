@@ -8,6 +8,16 @@ from app.services.logger import get_logger
 
 logger = get_logger("tts_service")
 
+# Inject CUDA and cuDNN DLL directories so onnxruntime-gpu can locate them on Windows
+_CUDA_BIN = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.4\bin"
+_CUDNN_BIN = r"C:\Program Files\NVIDIA\CUDNN\v9.24\bin\12.9\x64"
+for _dll_path in [_CUDA_BIN, _CUDNN_BIN]:
+    if os.path.isdir(_dll_path) and _dll_path not in os.environ.get("PATH", ""):
+        os.add_dll_directory(_dll_path)
+        os.environ["PATH"] = _dll_path + os.pathsep + os.environ.get("PATH", "")
+        logger.info(f"[TTS] Injected DLL path: {_dll_path}")
+
+
 MODEL_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx"
 VOICES_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
 
@@ -46,10 +56,17 @@ class TTSService:
                 if cls._kokoro is None:
                     cls._ensure_model_files()
                     from kokoro_onnx import Kokoro
-                    logger.info("Initializing Kokoro TTS engine on ONNX Runtime CPU...")
                     try:
+                        import onnxruntime as ort
+                        available_providers = ort.get_available_providers()
+                        if "CUDAExecutionProvider" in available_providers:
+                            providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+                            logger.info("Initializing Kokoro TTS engine on ONNX Runtime CUDA (GPU)...")
+                        else:
+                            providers = ["CPUExecutionProvider"]
+                            logger.info("Initializing Kokoro TTS engine on ONNX Runtime CPU...")
                         cls._kokoro = Kokoro(cls._model_path, cls._voices_path)
-                        logger.info("Kokoro TTS engine initialized successfully.")
+                        logger.info(f"Kokoro TTS engine initialized with providers: {providers}")
                     except Exception as e:
                         logger.error(f"Failed to initialize Kokoro engine: {e}")
                         raise e

@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import SectionTitle from "../ui/SectionTitle";
 import { COLORS, SHADOWS } from "../constants/colors";
-import { Send, Cpu, User } from "lucide-react";
+import { Send, Cpu, User, Mic, MicOff, Square } from "lucide-react";
+import { voiceService } from "../../services/voice.service";
 
 interface ChatBoxProps {
     logs?: string[];
     onSendCommand?: (text: string) => void;
+    isRecording?: boolean;
+    onToggleRecording?: () => void;
+    speakingState?: string;
 }
 
 interface ChatMessage {
@@ -14,7 +18,13 @@ interface ChatMessage {
     text: string;
 }
 
-export default function ChatBox({ logs = [], onSendCommand }: ChatBoxProps) {
+export default function ChatBox({ 
+    logs = [], 
+    onSendCommand,
+    isRecording = false,
+    onToggleRecording,
+    speakingState = "INACTIVE"
+}: ChatBoxProps) {
     const [inputValue, setInputValue] = useState("");
     const [currentTime, setCurrentTime] = useState<Date | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -39,7 +49,7 @@ export default function ChatBox({ logs = [], onSendCommand }: ChatBoxProps) {
     // Parse raw logs from voiceStore to extract user and sentinel dialogue
     const messages: ChatMessage[] = logs
         .map((logStr) => {
-            const match = logStr.match(/^\[(\d{2}:\d{2}:\d{2})\]\s*(.*)$/);
+            const match = logStr.match(/^\[(\d{2}:\d{2}:\d{2})\]\s*(.*)$/s);
             const timeVal = match ? match[1] : "00:00:00";
             const content = match ? match[2] : logStr;
 
@@ -194,21 +204,50 @@ export default function ChatBox({ logs = [], onSendCommand }: ChatBoxProps) {
 
                     <input
                         placeholder="Type message to Sentinel..."
-                        className="w-full bg-transparent outline-none text-[11px] px-3 py-2.5 tracking-wider text-cyan-200"
+                        className="w-full bg-transparent outline-none text-[11px] px-3 py-2.5 tracking-wider text-cyan-200 mr-20"
                         style={{ color: COLORS.cyanBright }}
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
                     />
-                    <button
-                        onClick={handleSend}
-                        className="absolute right-1 p-2 text-orange-500 border border-orange-500/50 rounded hover:bg-orange-950/40 hover:text-orange-400 transition-colors"
-                        style={{
-                            boxShadow: `0 0 6px rgba(255,138,0,0.15)`,
-                        }}
-                    >
-                        <Send size={13} />
-                    </button>
+                    
+                    {/* Action Buttons Group */}
+                    <div className="absolute right-1 flex items-center gap-1.5">
+                        {/* Stop Speaking / Mute Button */}
+                        {(speakingState === "SPEAKING" || speakingState === "THINKING") && (
+                            <button
+                                onClick={() => voiceService.stopSpeaking()}
+                                className="p-2 text-red-500 border border-red-500/50 rounded hover:bg-red-950/40 hover:text-red-400 transition-colors"
+                                title="Stop Sentinel from Speaking"
+                            >
+                                <Square size={13} fill="currentColor" />
+                            </button>
+                        )}
+
+                        {/* Microphone Toggle Button */}
+                        <button
+                            onClick={onToggleRecording}
+                            className={`p-2 rounded transition-colors ${
+                                isRecording
+                                    ? "text-green-400 border border-green-500 bg-green-950/40 animate-pulse animate-duration-[1.5s]"
+                                    : "text-cyan-500 border border-cyan-900/50 hover:bg-cyan-950/20 hover:text-cyan-400"
+                            }`}
+                            title={isRecording ? "Deactivate Microphone" : "Activate Microphone"}
+                        >
+                            {isRecording ? <MicOff size={13} /> : <Mic size={13} />}
+                        </button>
+
+                        {/* Send Button */}
+                        <button
+                            onClick={handleSend}
+                            className="p-2 text-orange-500 border border-orange-500/50 rounded hover:bg-orange-950/40 hover:text-orange-400 transition-colors"
+                            style={{
+                                boxShadow: `0 0 6px rgba(255,138,0,0.15)`,
+                            }}
+                        >
+                            <Send size={13} />
+                        </button>
+                    </div>
                 </div>
 
             </div>

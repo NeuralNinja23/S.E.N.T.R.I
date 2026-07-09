@@ -75,9 +75,14 @@ export default function Dashboard() {
 
                         {/* RIGHT COLUMN (ChatBox + FileUpload) */}
                         <div className="col-start-3 row-start-1 flex flex-col gap-5 h-full overflow-hidden">
-                            {/* Make ChatBox stretch to fill space */}
                             <div className="flex-1 min-h-0">
-                                <ChatBox logs={logs} onSendCommand={sendCommand} />
+                                <ChatBox
+                                    logs={logs}
+                                    onSendCommand={sendCommand}
+                                    isRecording={isRecording}
+                                    onToggleRecording={toggleRecording}
+                                    speakingState={speakingState}
+                                />
                             </div>
 
                             <div className="shrink-0">

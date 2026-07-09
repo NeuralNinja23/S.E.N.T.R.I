@@ -1,10 +1,10 @@
 from app.services.logger import get_logger
-from app.local.reasoning_service import ReasoningService
 
 logger = get_logger("llm_direct")
 
 def call_llm_direct(base_url: str, chat_model: str, system_prompt: str, user_content: str, timeout_sec: float = 10.0, thinking: bool = False, num_ctx: int = 4096, temperature: float = None) -> str:
     """Redirects direct LLM calls from memory tasks to the local ReasoningService (Ollama)."""
+    from app.local.reasoning_service import ReasoningService
     try:
         res = ReasoningService.generate(
             system_prompt=system_prompt,
@@ -22,6 +22,7 @@ def call_llm_direct(base_url: str, chat_model: str, system_prompt: str, user_con
 
 def call_llm_streaming(base_url: str, chat_model: str, system_prompt: str, user_content: str, on_token=None, timeout_sec: float = 30.0, thinking: bool = False) -> str:
     """Redirects streaming LLM calls from memory tasks to the local ReasoningService (Ollama)."""
+    from app.local.reasoning_service import ReasoningService
     try:
         res = ReasoningService.generate(
             system_prompt=system_prompt,

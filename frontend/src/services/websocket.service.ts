@@ -21,7 +21,7 @@ class WebsocketService {
     this.onCloseCb = onClose;
     this.onErrorCb = onError;
 
-    this.ws = new WebSocket("ws://localhost:8000/ws/voice");
+    this.ws = new WebSocket("ws://localhost:8008/ws/voice");
     this.ws.binaryType = "arraybuffer";
 
     this.ws.onopen = () => {

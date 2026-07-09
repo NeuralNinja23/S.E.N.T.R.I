@@ -20,11 +20,12 @@ class VoiceService {
       (event) => {
         // ws message handler
         if (event.data instanceof ArrayBuffer) {
-          if (!this.isRecordingRef.current) return;
           audioService.playAudioChunk(
             event.data,
             () => voiceStore.setState({ speakingState: "SPEAKING" }),
-            () => voiceStore.setState({ speakingState: this.isRecordingRef.current ? "LISTENING" : "INACTIVE" })
+            () => {
+              voiceStore.setState({ speakingState: this.isRecordingRef.current ? "LISTENING" : "INACTIVE" });
+            }
           );
           return;
         }
@@ -54,6 +55,9 @@ class VoiceService {
           } else if (msg.state === "READY") {
             voiceStore.setState({ speakingState: "INACTIVE" });
             voiceStore.addLog("SYS: Sentinel is active and ready.");
+          } else if (msg.state === "THINKING") {
+            voiceStore.setState({ speakingState: "THINKING" });
+            // Keep microphone open for hands-free continuous conversation and barge-in
           }
         }
       },
@@ -134,6 +138,14 @@ class VoiceService {
     }
   }
 
+  stopSpeaking() {
+    audioService.stopAllAudio();
+    if (websocketService.isOpen()) {
+      websocketService.send(JSON.stringify({ type: "governance", command: "stop" }));
+    }
+    voiceStore.setState({ speakingState: "INACTIVE" });
+  }
+
   stopRecording() {
     this.isRecordingRef.current = false;
     voiceStore.setState({ isRecording: false, speakingState: "INACTIVE" });
@@ -178,6 +190,9 @@ class VoiceService {
     if (isRecording) {
       this.stopRecording();
     } else {
+      if (speakingState === "SPEAKING" || speakingState === "THINKING") {
+        this.stopSpeaking();
+      }
       this.startRecording();
     }
   }
