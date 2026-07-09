@@ -7,7 +7,7 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Iterator, Optional, List, Tuple, Union, Callable
 from .db import Database
-from ..local.llm import call_llm_direct
+from app.conversation.adapter import call_llm_direct
 from .embeddings import get_embedding
 from ..debug import debug_log
 from ..utils.redact import redact, scrub_secrets
@@ -1116,7 +1116,7 @@ def generate_conversation_summary(
     Returns:
         Tuple of (summary, topics) where topics is comma-separated
     """
-    from ..local.llm import call_llm_direct, call_llm_streaming
+    from app.conversation.adapter import call_llm_direct, call_llm_streaming
 
     chunks_text = "\n".join(recent_chunks[-10:])  # Last 10 chunks to keep context manageable
 

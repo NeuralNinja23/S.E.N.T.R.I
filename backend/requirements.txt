@@ -34,7 +34,3 @@ pyaudio
 watchdog
 pypdf
 python-docx
-faster-whisper
-kokoro-onnx
-soundfile
-onnxruntime

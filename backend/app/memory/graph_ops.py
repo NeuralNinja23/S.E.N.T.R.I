@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from typing import Iterator, NamedTuple, Optional
 
 from ..debug import debug_log
-from ..local.llm import call_llm_direct
+from app.conversation.adapter import call_llm_direct
 from .graph import (
     BRANCH_DIRECTIVES,
     BRANCH_USER,

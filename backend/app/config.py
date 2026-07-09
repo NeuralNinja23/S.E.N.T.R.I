@@ -8,11 +8,8 @@ PROJECT_ID = os.getenv("VERTEX_PROJECT_ID")
 REGION = os.getenv("VERTEX_REGION", "us-central1")
 MODEL = "gemini-live-2.5-flash-native-audio"
 
-# Local AI Configurations
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3.5:4b")
-ASR_MODEL_SIZE = os.getenv("ASR_MODEL_SIZE", "small")
-TTS_SPEAKER_VOICE = os.getenv("TTS_SPEAKER_VOICE", "af_bella")
+# V2 Conversation Configurations
+CONVERSATION_ENGINE = "miniomni2"
 
 # Database Settings
 from pathlib import Path
