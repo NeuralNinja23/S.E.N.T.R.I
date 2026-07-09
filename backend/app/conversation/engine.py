@@ -1,7 +1,8 @@
 from typing import AsyncGenerator, Dict, Any
 from .interfaces import ISpeechToSpeechModel
-from .miniomni import MiniOmni2Model
+from .registry import InferenceRegistry
 from .adapter import ConversationAdapter
+from app.config import CONVERSATION_ENGINE
 
 class ConversationEngine:
     """
@@ -9,8 +10,16 @@ class ConversationEngine:
     Routes real-time streaming audio and text turns.
     """
     
-    def __init__(self, model: ISpeechToSpeechModel = None):
-        self.model = model or MiniOmni2Model()
+    def __init__(self, model_id: str = None, model: ISpeechToSpeechModel = None):
+        self.model_id = model_id or CONVERSATION_ENGINE
+        self.model = model or InferenceRegistry.get_model(self.model_id)
+        self.model_info = InferenceRegistry.get_info(self.model_id)
+        
+    def supports(self, capability: str) -> bool:
+        """Helper to query if the active model supports a specific capability."""
+        if self.model_info:
+            return self.model_info.supports(capability)
+        return False
         
     async def run_voice_turn(
         self, 

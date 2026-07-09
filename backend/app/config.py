@@ -11,6 +11,12 @@ MODEL = "gemini-live-2.5-flash-native-audio"
 # V2 Conversation Configurations
 CONVERSATION_ENGINE = "miniomni2"
 
+# MiniOmni2 Model Runtime Configurations
+MINIOMNI_HOME = os.getenv("MINIOMNI_HOME", "C:\\Users\\JARVIS\\Desktop\\GenxAI Labz\\MiniOmni 2")
+MINIOMNI_SERVER = os.getenv("MINIOMNI_SERVER", "http://127.0.0.1")
+MINIOMNI_PORT = int(os.getenv("MINIOMNI_PORT", "60808"))
+MINIOMNI_PYTHON = os.getenv("MINIOMNI_PYTHON", "venv\\Scripts\\python.exe")
+
 # Database Settings
 from pathlib import Path
 DATABASE_PATH = os.getenv(

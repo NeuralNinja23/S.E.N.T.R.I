@@ -2,64 +2,23 @@ import os
 import wave
 import tempfile
 import base64
-import httpx
-from typing import AsyncGenerator, Tuple, Union
+from typing import AsyncGenerator, Tuple, Union, Dict, Any
 from app.services.logger import get_logger
+from app.config import MINIOMNI_SERVER, MINIOMNI_PORT
 from .interfaces import ISpeechToSpeechModel
+from .transport import ISpeechTransport, HttpSpeechTransport
 
 logger = get_logger("miniomni_model")
 
-async def parse_multipart_stream(response: httpx.Response) -> AsyncGenerator[Tuple[str, Union[bytes, str]], None]:
-    """Parses binary multipart/x-mixed-replace stream from MiniOmni2 backend."""
-    boundary = b"--frame"
-    buffer = bytearray()
-    
-    async for chunk in response.aiter_bytes():
-        buffer.extend(chunk)
-        
-        while True:
-            # Find the first boundary marker
-            first_idx = buffer.find(boundary)
-            if first_idx == -1:
-                break
-                
-            # Find the subsequent boundary marker
-            second_idx = buffer.find(boundary, first_idx + len(boundary))
-            if second_idx == -1:
-                # Incomplete frame, wait for more chunks
-                break
-                
-            # Extract raw frame
-            frame = buffer[first_idx + len(boundary) : second_idx]
-            
-            # Slice processed content from buffer
-            del buffer[:second_idx]
-            
-            # Locate end of headers marker
-            header_end = frame.find(b"\r\n\r\n")
-            if header_end == -1:
-                continue
-                
-            headers_part = frame[:header_end]
-            body_part = frame[header_end + 4:]
-            
-            # Strip trailing CRLF
-            if body_part.endswith(b"\r\n"):
-                body_part = body_part[:-2]
-                
-            # Cleanly yields components based on boundary content-types
-            if b"audio/wav" in headers_part:
-                yield ("audio", bytes(body_part))
-            elif b"text/plain" in headers_part:
-                yield ("text", body_part.decode("utf-8", errors="ignore"))
-
 class MiniOmni2Model(ISpeechToSpeechModel):
     """
-    MiniOmni2 integration driver calling the local server daemon over streaming API.
+    MiniOmni2 integration driver calling the local server daemon over SpeechTransport.
     """
     
-    def __init__(self, server_url: str = "http://127.0.0.1:60808/chat"):
-        self.server_url = server_url
+    def __init__(self, transport: ISpeechTransport = None):
+        self.transport = transport or HttpSpeechTransport()
+        # Build server URL from config settings
+        self.server_url = f"{MINIOMNI_SERVER}:{MINIOMNI_PORT}/chat"
 
     async def process_audio_stream_with_text(
         self,
@@ -102,24 +61,15 @@ class MiniOmni2Model(ISpeechToSpeechModel):
             except Exception:
                 pass
                 
-        # 4. Stream POST to local Flask server
+        # 4. Stream POST request via Transport layer
         payload = {
             "audio": encoded_audio,
             "stream_stride": 4,
             "max_tokens": 2048
         }
         
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                async with client.stream("POST", self.server_url, json=payload) as response:
-                    if response.status_code != 200:
-                        logger.error(f"MiniOmni2 server returned error code: {response.status_code}")
-                        return
-                        
-                    async for event_type, content in parse_multipart_stream(response):
-                        yield event_type, content
-        except Exception as e:
-            logger.error(f"Failed to communicate with MiniOmni2 streaming server: {e}")
+        async for event_type, content in self.transport.send_audio_request(self.server_url, payload):
+            yield event_type, content
 
     async def process_audio_stream(
         self,

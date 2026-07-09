@@ -10,7 +10,7 @@ from app.memory.graph import GraphMemoryStore
 from app.memory.graph_ops import build_warm_profile, format_warm_profile_block
 from app.runtime.runtime_state import runtime_store, RuntimeState, runtime_events
 
-from app.conversation.engine import ConversationEngine
+from app.conversation import ConversationEngine, ConversationSession
 from app.api.upload import get_all_documents_text_context
 
 router = APIRouter()
@@ -20,9 +20,9 @@ logger = get_logger("websocket")
 memory_store = GraphMemoryStore(DATABASE_PATH)
 conversation_engine = ConversationEngine()
 
-async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session_state: dict):
-    """Processes speech input with MiniOmni2 and streams text and audio back."""
-    session_state["is_model_speaking"] = True
+async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: ConversationSession):
+    """Processes speech input with MiniOmni2, tracking TTFT and TTFA latency metrics."""
+    session.start_turn()
     try:
         # Set UI state to THINKING
         await websocket.send_json({"type": "state", "state": "THINKING"})
@@ -31,10 +31,12 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session_s
         async def audio_generator():
             yield speech_bytes
             
-        logger.info("Sending speech turn to ConversationEngine...")
+        logger.info(f"[SESSION {session.session_id}] Sending speech turn to ConversationEngine...")
         response_generator = conversation_engine.run_voice_turn(audio_generator())
         
         first_chunk = True
+        accumulated_text = []
+        
         async for chunk in response_generator:
             if chunk.get("type") == "system" and chunk.get("status") == "conversation_engine_missing":
                 await websocket.send_json(chunk)
@@ -46,23 +48,40 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session_s
                 first_chunk = False
                 
             if chunk["type"] == "audio":
+                session.metrics.record_first_audio()
                 await websocket.send_bytes(chunk["data"])
                 await asyncio.sleep(0.005)  # Flow control
             elif chunk["type"] == "text":
+                session.metrics.record_first_token()
+                session.metrics.add_tokens(len(chunk["data"].split()))
+                accumulated_text.append(chunk["data"])
                 await websocket.send_json({"type": "text", "data": chunk["data"]})
+                
+        final_response = "".join(accumulated_text).strip()
+        session.end_turn(final_text=final_response)
+        
+        # Log latency results
+        logger.info(
+            f"[METRICS] Turn complete. Latency details:\n"
+            f"  - TTFT (Time to First Token): {session.metrics.ttft:.3f}s\n"
+            f"  - TTFA (Time to First Audio): {session.metrics.ttfa:.3f}s\n"
+            f"  - Total Latency: {session.model_latency:.3f}s\n"
+            f"  - Tokens generated: {session.metrics.tokens_generated} ({session.metrics.tokens_per_second:.1f} tok/sec)"
+        )
                 
     except Exception as e:
         logger.error(f"Error in speech processing turn: {e}")
+        session.speaking = False
     finally:
-        session_state["is_model_speaking"] = False
         try:
             await websocket.send_json({"type": "state", "state": "READY"})
         except Exception:
             pass
 
-async def process_user_text_turn(text_query: str, websocket: WebSocket, session_state: dict):
+async def process_user_text_turn(text_query: str, websocket: WebSocket, session: ConversationSession):
     """Processes text query directly, returning text reply without TTS."""
-    session_state["is_model_speaking"] = True
+    session.start_turn()
+    session.append_user_turn(text_query)
     try:
         # Send USER log to frontend
         await websocket.send_json({"type": "user", "data": text_query})
@@ -96,19 +115,20 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session_
         )
         
         if not response_text:
-            session_state["is_model_speaking"] = False
+            session.end_turn()
             await websocket.send_json({"type": "state", "state": "READY"})
             return
             
         logger.info(f"Ollama response: {response_text}")
+        session.end_turn(final_text=response_text)
         
         # Log full text to frontend (retains <think> blocks for visual display)
         await websocket.send_json({"type": "text", "data": response_text})
         
     except Exception as e:
         logger.error(f"Error in local text processing turn: {e}")
+        session.speaking = False
     finally:
-        session_state["is_model_speaking"] = False
         try:
             await websocket.send_json({"type": "state", "state": "READY"})
         except Exception:
@@ -119,16 +139,9 @@ async def voice_websocket(websocket: WebSocket):
     await websocket.accept()
     logger.info("Frontend client connected to local /ws/voice WebSocket")
     
-    session_state = {
-        "last_input_time": time.time(),
-        "client_sample_rate": None,
-        "is_model_speaking": False,
-        "is_user_speaking": False,
-        "silence_chunks": 0,
-        "audioop_state": None
-    }
-    
-    speech_buffer = bytearray()
+    # Initialize focused ConversationSession
+    session = ConversationSession(session_id=f"voice_session_{int(time.time())}")
+    client_sample_rate = 16000
     
     # Notify frontend of clean connection
     await websocket.send_json({"type": "system", "message": "Sentinel Local Mode Connected (V2)"})
@@ -201,9 +214,8 @@ async def voice_websocket(websocket: WebSocket):
                     p_type = payload.get("type")
                     
                     if p_type == "config":
-                        rate = payload.get("sampleRate", 16000)
-                        session_state["client_sample_rate"] = rate
-                        logger.info(f"Client sample rate configured: {rate} Hz")
+                        client_sample_rate = payload.get("sampleRate", 16000)
+                        logger.info(f"Client sample rate configured: {client_sample_rate} Hz")
                         
                     elif p_type == "command":
                         cmd_text = payload.get("text", "")
@@ -216,7 +228,7 @@ async def voice_websocket(websocket: WebSocket):
                                 asyncio.create_task(runtime_service.wake(websocket))
                             else:
                                 # Intercept and process local text queries (which still works)
-                                asyncio.create_task(process_user_text_turn(cmd_text, websocket, session_state))
+                                asyncio.create_task(process_user_text_turn(cmd_text, websocket, session))
                                 
                     elif p_type == "governance":
                         cmd = payload.get("command")
@@ -231,7 +243,7 @@ async def voice_websocket(websocket: WebSocket):
                         elif cmd == "stop":
                             from app.tasks.task_manager import stop_all_tasks
                             stop_all_tasks()
-                            session_state["is_model_speaking"] = False
+                            session.speaking = False
                             await websocket.send_json({"type": "interrupt"})
                         elif cmd == "enter_standby":
                             from app.runtime.runtime_service import runtime_service
@@ -241,12 +253,10 @@ async def voice_websocket(websocket: WebSocket):
                             asyncio.create_task(runtime_service.wake(websocket))
                             
                     elif p_type == "turn_complete":
-                        if len(speech_buffer) > 0:
-                            audio_turn_data = bytes(speech_buffer)
-                            speech_buffer.clear()
-                            
+                        audio_turn_data = session.consume_speech_buffer()
+                        if len(audio_turn_data) > 0:
                             # Trigger processing of this voice turn
-                            asyncio.create_task(process_user_turn(audio_turn_data, websocket, session_state))
+                            asyncio.create_task(process_user_turn(audio_turn_data, websocket, session))
                             
                 except WebSocketDisconnect:
                     raise
@@ -257,10 +267,8 @@ async def voice_websocket(websocket: WebSocket):
             elif "bytes" in message and message["bytes"]:
                 raw_audio = message["bytes"]
                 if len(raw_audio) > 0 and len(raw_audio) % 2 == 0:
-                    session_state["last_input_time"] = time.time()
-                    
-                    # Accumulate raw audio bytes from client
-                    speech_buffer.extend(raw_audio)
+                    # Accumulate raw audio bytes inside the session
+                    session.append_audio(raw_audio)
                 
     except WebSocketDisconnect:
         logger.info("Frontend WebSocket client disconnected cleanly.")

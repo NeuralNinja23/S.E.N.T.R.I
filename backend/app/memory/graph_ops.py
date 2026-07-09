@@ -6,7 +6,7 @@ Keeps graph.py as a pure data store (SQLite only). This module handles:
 - Best-node traversal (greedy descent via recent → top → root entry points)
 - Auto-split when a node exceeds the token threshold
 
-All LLM calls use call_llm_direct from the local Ollama instance.
+All LLM calls are routed through call_llm_direct in app.conversation.adapter.
 """
 
 from __future__ import annotations
