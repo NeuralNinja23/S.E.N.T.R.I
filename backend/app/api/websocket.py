@@ -18,15 +18,47 @@ logger = get_logger("websocket")
 
 # Initialize graph memory store pointing to Sentinel.db
 memory_store = GraphMemoryStore(DATABASE_PATH)
+conversation_engine = ConversationEngine()
 
 async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session_state: dict):
-    """Voice turn handler stub (V2 ConversationEngine not integrated)."""
-    logger.warning("Voice turn triggered, but Conversation Engine is not integrated.")
-    await websocket.send_json({
-        "type": "system",
-        "status": "conversation_engine_missing",
-        "message": "Conversation engine has not been integrated."
-    })
+    """Processes speech input with MiniOmni2 and streams text and audio back."""
+    session_state["is_model_speaking"] = True
+    try:
+        # Set UI state to THINKING
+        await websocket.send_json({"type": "state", "state": "THINKING"})
+        
+        # Helper generator yielding collected speech bytes
+        async def audio_generator():
+            yield speech_bytes
+            
+        logger.info("Sending speech turn to ConversationEngine...")
+        response_generator = conversation_engine.run_voice_turn(audio_generator())
+        
+        first_chunk = True
+        async for chunk in response_generator:
+            if chunk.get("type") == "system" and chunk.get("status") == "conversation_engine_missing":
+                await websocket.send_json(chunk)
+                break
+                
+            if first_chunk:
+                # Set UI state back to READY for streaming reply
+                await websocket.send_json({"type": "state", "state": "READY"})
+                first_chunk = False
+                
+            if chunk["type"] == "audio":
+                await websocket.send_bytes(chunk["data"])
+                await asyncio.sleep(0.005)  # Flow control
+            elif chunk["type"] == "text":
+                await websocket.send_json({"type": "text", "data": chunk["data"]})
+                
+    except Exception as e:
+        logger.error(f"Error in speech processing turn: {e}")
+    finally:
+        session_state["is_model_speaking"] = False
+        try:
+            await websocket.send_json({"type": "state", "state": "READY"})
+        except Exception:
+            pass
 
 async def process_user_text_turn(text_query: str, websocket: WebSocket, session_state: dict):
     """Processes text query directly, returning text reply without TTS."""
@@ -95,6 +127,8 @@ async def voice_websocket(websocket: WebSocket):
         "silence_chunks": 0,
         "audioop_state": None
     }
+    
+    speech_buffer = bytearray()
     
     # Notify frontend of clean connection
     await websocket.send_json({"type": "system", "message": "Sentinel Local Mode Connected (V2)"})
@@ -207,12 +241,12 @@ async def voice_websocket(websocket: WebSocket):
                             asyncio.create_task(runtime_service.wake(websocket))
                             
                     elif p_type == "turn_complete":
-                        logger.warning("Voice turn complete signaled, but Conversation Engine is not integrated.")
-                        await websocket.send_json({
-                            "type": "system",
-                            "status": "conversation_engine_missing",
-                            "message": "Conversation engine has not been integrated."
-                        })
+                        if len(speech_buffer) > 0:
+                            audio_turn_data = bytes(speech_buffer)
+                            speech_buffer.clear()
+                            
+                            # Trigger processing of this voice turn
+                            asyncio.create_task(process_user_turn(audio_turn_data, websocket, session_state))
                             
                 except WebSocketDisconnect:
                     raise
@@ -221,12 +255,12 @@ async def voice_websocket(websocket: WebSocket):
 
             # Process incoming binary audio bytes
             elif "bytes" in message and message["bytes"]:
-                logger.warning("Binary audio bytes received, but Conversation Engine is not integrated.")
-                await websocket.send_json({
-                    "type": "system",
-                    "status": "conversation_engine_missing",
-                    "message": "Conversation engine has not been integrated."
-                })
+                raw_audio = message["bytes"]
+                if len(raw_audio) > 0 and len(raw_audio) % 2 == 0:
+                    session_state["last_input_time"] = time.time()
+                    
+                    # Accumulate raw audio bytes from client
+                    speech_buffer.extend(raw_audio)
                 
     except WebSocketDisconnect:
         logger.info("Frontend WebSocket client disconnected cleanly.")

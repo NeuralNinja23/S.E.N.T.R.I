@@ -1,5 +1,6 @@
 from typing import AsyncGenerator, Dict, Any
 from .interfaces import ISpeechToSpeechModel
+from .miniomni import MiniOmni2Model
 from .adapter import ConversationAdapter
 
 class ConversationEngine:
@@ -9,7 +10,7 @@ class ConversationEngine:
     """
     
     def __init__(self, model: ISpeechToSpeechModel = None):
-        self.model = model
+        self.model = model or MiniOmni2Model()
         
     async def run_voice_turn(
         self, 
@@ -17,7 +18,7 @@ class ConversationEngine:
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Executes a real-time duplex voice turn.
-        Yields structured statuses or audio packets.
+        Yields structured statuses or audio/text packets.
         """
         if not self.model:
             yield {
@@ -27,8 +28,15 @@ class ConversationEngine:
             }
             return
             
-        async for output_chunk in self.model.process_audio_stream(input_audio_stream):
-            yield {"type": "audio", "data": output_chunk}
+        if hasattr(self.model, "process_audio_stream_with_text"):
+            async for event_type, content in self.model.process_audio_stream_with_text(input_audio_stream):
+                if event_type == "audio":
+                    yield {"type": "audio", "data": content}
+                elif event_type == "text":
+                    yield {"type": "text", "data": content}
+        else:
+            async for output_chunk in self.model.process_audio_stream(input_audio_stream):
+                yield {"type": "audio", "data": output_chunk}
             
     @staticmethod
     async def run_text_turn(
