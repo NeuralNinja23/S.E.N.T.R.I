@@ -5,9 +5,9 @@ import re
 import socket
 import ipaddress
 import requests
-from urllib.parse import urlparse, urljoin, quote, quote_plus
+from urllib.parse import urlparse, urljoin, quote, quote_plus, parse_qs, unquote
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Optional, List, Tuple
 from bs4 import BeautifulSoup
 from app.services.logger import get_logger
 
@@ -371,10 +371,10 @@ def web_search(search_query: str, lang: str = "en") -> str:
                 if href.startswith('//duckduckgo.com/l/') and 'uddg=' in href:
                     try:
                         parsed = urlparse(href)
-                        qs = urllib.parse.parse_qs(parsed.query)
+                        qs = parse_qs(parsed.query)
                         if 'uddg' in qs:
-                            actual_url = urllib.parse.unquote(qs['uddg'][0])
-                    except:
+                            actual_url = unquote(qs['uddg'][0])
+                    except Exception:
                         pass
                 
                 if (href.startswith('http') and len(title) > 10 and 

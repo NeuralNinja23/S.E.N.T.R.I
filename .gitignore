@@ -38,3 +38,9 @@ backend.log.*
 
 # Model weights
 backend/app/local/resources/
+
+# Model files and resources
+*.onnx
+*.bin
+backend/app/conversation/resources/
+*.wasm

@@ -9,7 +9,7 @@ logger = get_logger("fs_tools")
 # fs_tools.py is at Senitnel/backend/app/Sentinel/tools/fs_tools.py
 ROOT_DIR = Path(__file__).resolve().parents[4]
 
-def _secure_path(path_str: str) -> Path | None:
+def resolve_absolute_path(path_str: str) -> Path | None:
     """Resolves the path allowing full system access."""
     try:
         if len(path_str) == 2 and path_str[1] == ':':
@@ -26,7 +26,7 @@ def _secure_path(path_str: str) -> Path | None:
 
 def list_directory(path: str = ".") -> str:
     """Lists files and directories in the specified path. Returns JSON string."""
-    target_path = _secure_path(path)
+    target_path = resolve_absolute_path(path)
     if not target_path:
         return json.dumps({"error": f"Restricted path: {path}"})
     if not target_path.exists():
@@ -80,7 +80,7 @@ def is_binary_file(filepath: Path) -> bool:
 
 def read_file(path: str) -> str:
     """Reads the contents of a specific file. Limited to 800 lines. Supports PDFs, DOCX, and fallback encodings. Returns JSON string."""
-    target_path = _secure_path(path)
+    target_path = resolve_absolute_path(path)
     if not target_path:
         return json.dumps({"error": f"Restricted path: {path}"})
     if not target_path.exists():
@@ -146,7 +146,7 @@ def read_file(path: str) -> str:
                     lines = []
                     for i, line in enumerate(f):
                         if i >= 800:
-                            lines.append(f"\n... [TRUNCATED AT 800 LINES] Use search_code for deeper inspection ...")
+                            lines.append("\n... [TRUNCATED AT 800 LINES] Use search_code for deeper inspection ...")
                             break
                         lines.append(line)
                     content = "".join(lines)
@@ -167,7 +167,7 @@ def read_file(path: str) -> str:
 
 def get_file_tree(path: str = None) -> str:
     """Returns the file tree for the given path (defaults to ROOT_DIR). Returns JSON string."""
-    search_root = _secure_path(path) if path else ROOT_DIR
+    search_root = resolve_absolute_path(path) if path else ROOT_DIR
     logger.info(f"Generating file tree for {search_root}...")
     tree = []
     
@@ -210,7 +210,7 @@ def open_externally(path_or_url: str = None, path: str = None) -> str:
             return json.dumps({"status": "success", "message": f"Successfully launched URL/URI: {target}"})
             
         # Resolve target local path
-        target_path = _secure_path(target)
+        target_path = resolve_absolute_path(target)
         if not target_path:
             return json.dumps({"error": f"Invalid or restricted path: {target}"})
             
@@ -236,7 +236,7 @@ def open_internally(path: str) -> str:
     """
     Inspects a file (reads its content) or a directory (lists its files and subdirectories) internally.
     """
-    target_path = _secure_path(path)
+    target_path = resolve_absolute_path(path)
     if not target_path:
         return json.dumps({"error": f"Restricted path: {path}"})
     if not target_path.exists():

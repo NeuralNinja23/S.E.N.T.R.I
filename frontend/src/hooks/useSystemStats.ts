@@ -46,7 +46,7 @@ export function useSystemStats(intervalMs = 2000) {
 
     const fetchStats = async () => {
       try {
-        const res = await fetch("http://localhost:8008/api/system-stats");
+        const res = await fetch("http://127.0.0.1:8008/api/system-stats");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: SystemStats = await res.json();
         if (active) {

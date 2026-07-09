@@ -14,7 +14,7 @@ export default function FileUpload() {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const API_BASE = "http://localhost:8008/api/upload";
+    const API_BASE = "http://127.0.0.1:8008/api/upload";
 
     // Fetch initial list on mount
     useEffect(() => {

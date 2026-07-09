@@ -1,116 +1,170 @@
-import subprocess
-import socket
-import time
+import gc
 import os
+import logging
 import asyncio
 import httpx
+import numpy as np
 from enum import Enum
-from app.services.logger import get_logger
-from app.config import MINIOMNI_HOME, MINIOMNI_SERVER, MINIOMNI_PORT, MINIOMNI_PYTHON
+from pathlib import Path
 
-logger = get_logger("model_runtime")
+logger = logging.getLogger("model_runtime")
 
-class InferenceRuntimeState(str, Enum):
-    STOPPED = "STOPPED"
-    STARTING = "STARTING"
-    LOADING_MODEL = "LOADING_MODEL"
+class ModelState(str, Enum):
+    UNLOADED = "UNLOADED"
+    LOADING = "LOADING"
     READY = "READY"
     FAILED = "FAILED"
-    STOPPING = "STOPPING"
+    UNLOADING = "UNLOADING"
 
 class InferenceRuntimeManager:
     """
-    Manages process lifecycles, monitoring, and state tracking for inference models.
+    Manages in-memory singletons and lifecycle allocations for local models 
+    (Faster-Whisper ASR & Kokoro ONNX TTS) using explicit model states.
     """
-    
     def __init__(self):
-        self.proc = None
-        self.state = InferenceRuntimeState.STOPPED
-        
-    def _is_port_open(self, ip: str, port: int) -> bool:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(1.0)
-        try:
-            s.connect((ip, port))
-            s.close()
-            return True
-        except Exception:
-            return False
-            
-    async def check_health(self) -> bool:
-        """
-        Queries the model endpoint to verify HTTP availability and warm-up readiness.
-        """
-        ip_addr = MINIOMNI_SERVER.replace("http://", "").replace("https://", "")
-        if not self._is_port_open(ip_addr, MINIOMNI_PORT):
-            return False
-            
-        url = f"{MINIOMNI_SERVER}:{MINIOMNI_PORT}/chat"
-        try:
-            async with httpx.AsyncClient(timeout=2.0) as client:
-                resp = await client.get(url)
-                # GET is 405 Method Not Allowed (meaning Flask is up and model warm-up succeeded)
-                return resp.status_code == 405
-        except Exception:
-            return False
-            
+        self.state: ModelState = ModelState.UNLOADED
+        self.whisper_model = None
+        self.kokoro_model = None
+
     async def start(self):
         """
-        Starts the MiniOmni2 background model server if not already running.
+        Loads the ASR and TTS models into GPU VRAM (or CPU) on application startup.
+        Downloads model weights automatically if they are not already cached.
         """
-        ip_addr = MINIOMNI_SERVER.replace("http://", "").replace("https://", "")
-        
-        # Check if already running (possibly orphaned or started externally)
-        if await self.check_health():
-            logger.info(f"Model server is already running and healthy on port {MINIOMNI_PORT}.")
-            self.state = InferenceRuntimeState.READY
+        if self.state == ModelState.READY:
+            logger.info("Inference models are already loaded and ready.")
             return
-            
-        self.state = InferenceRuntimeState.STARTING
-        python_exe = os.path.join(MINIOMNI_HOME, MINIOMNI_PYTHON)
-        server_py = os.path.join(MINIOMNI_HOME, "server.py")
-        
-        logger.info(f"Starting MiniOmni2 model server daemon from {MINIOMNI_HOME}...")
-        self.state = InferenceRuntimeState.LOADING_MODEL
+
+        self.state = ModelState.LOADING
+        logger.info("[RUNTIME] Initializing local speech models...")
+
         try:
-            self.proc = subprocess.Popen(
-                [python_exe, server_py, "--ip", ip_addr, "--port", str(MINIOMNI_PORT)],
-                cwd=MINIOMNI_HOME,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
-            # Wait for healthcheck success
-            for i in range(40):
-                if await self.check_health():
-                    logger.info("MiniOmni2 model server daemon is fully healthy and ready.")
-                    self.state = InferenceRuntimeState.READY
-                    return
-                await asyncio.sleep(0.5)
-            logger.error("MiniOmni2 model server failed to pass healthcheck in time.")
-            self.state = InferenceRuntimeState.FAILED
+            # 1. Load Faster-Whisper Model in-memory (GPU if available)
+            def load_whisper():
+                import onnxruntime as ort
+                from faster_whisper import WhisperModel
+                
+                # Check CUDA availability via ONNX runtime to avoid PyTorch dependency
+                available_providers = ort.get_available_providers()
+                if "CUDAExecutionProvider" in available_providers:
+                    device = "cuda"
+                    compute_type = "float16"
+                else:
+                    device = "cpu"
+                    compute_type = "int8"
+                
+                logger.info(f"[RUNTIME] Loading Faster-Whisper (base) on {device} ({compute_type})...")
+                try:
+                    return WhisperModel("base", device=device, compute_type=compute_type)
+                except Exception as err:
+                    logger.warning(f"[RUNTIME] Failed loading Faster-Whisper on {device}: {err}. Falling back to CPU.")
+                    return WhisperModel("base", device="cpu", compute_type="int8")
+
+            self.whisper_model = await asyncio.to_thread(load_whisper)
+
+            # 2. Load Kokoro ONNX TTS Model in-memory (GPU via ONNX Runtime CUDA EP if available)
+            def load_kokoro():
+                import onnxruntime as ort
+                from kokoro_onnx import Kokoro
+                import urllib.request
+
+                # Paths relative to backend
+                resources_dir = Path(__file__).resolve().parent.parent / "conversation" / "resources"
+                resources_dir.mkdir(parents=True, exist_ok=True)
+
+                model_path = resources_dir / "kokoro-v1.0.onnx"
+                voices_path = resources_dir / "voices-v1.0.bin"
+
+                MODEL_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx"
+                VOICES_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
+
+                # Trigger automatic downloads if files do not exist
+                if not model_path.exists():
+                    logger.info(f"[RUNTIME] Kokoro ONNX model missing. Downloading from {MODEL_URL}...")
+                    urllib.request.urlretrieve(MODEL_URL, str(model_path))
+                if not voices_path.exists():
+                    logger.info(f"[RUNTIME] Kokoro voices data missing. Downloading from {VOICES_URL}...")
+                    urllib.request.urlretrieve(VOICES_URL, str(voices_path))
+
+                # Check ONNX providers
+                available_providers = ort.get_available_providers()
+                if "CUDAExecutionProvider" in available_providers:
+                    providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+                    logger.info("[RUNTIME] Initializing Kokoro TTS with CUDA Execution Provider...")
+                else:
+                    providers = ["CPUExecutionProvider"]
+                    logger.info("[RUNTIME] Initializing Kokoro TTS with CPU Execution Provider...")
+
+                return Kokoro(str(model_path), str(voices_path))
+
+            self.kokoro_model = await asyncio.to_thread(load_kokoro)
+
+            # 3. Warm-up Faster-Whisper: run dummy transcription to pre-compile CUDA kernels
+            def warmup_whisper():
+                try:
+                    logger.info("[RUNTIME] Warming up Faster-Whisper CUDA kernels...")
+                    silence = np.zeros(16000, dtype=np.float32)  # 1 second of silence
+                    segments, _ = self.whisper_model.transcribe(silence, language="en")
+                    list(segments)  # Consume the generator to trigger compilation
+                    logger.info("[RUNTIME] Faster-Whisper warmup complete.")
+                except Exception as e:
+                    logger.warning(f"[RUNTIME] Faster-Whisper warmup failed (non-fatal): {e}")
+
+            await asyncio.to_thread(warmup_whisper)
+
+            # 4. Warm-up Ollama: send a minimal dummy prompt to force model into GPU VRAM
+            async def warmup_ollama():
+                from app.config import REASONING_MODEL
+                try:
+                    logger.info(f"[RUNTIME] Warming up Ollama model '{REASONING_MODEL}' into VRAM...")
+                    async with httpx.AsyncClient(timeout=120.0) as client:
+                        await client.post(
+                            "http://127.0.0.1:11434/api/generate",
+                            json={"model": REASONING_MODEL, "prompt": "hi", "stream": False, "options": {"num_predict": 1}}
+                        )
+                    logger.info("[RUNTIME] Ollama model warmup complete.")
+                except Exception as e:
+                    logger.warning(f"[RUNTIME] Ollama warmup failed (non-fatal): {e}")
+
+            # Fire Ollama warmup as a background task — do NOT await it.
+            # This lets uvicorn start accepting connections in ~13s while
+            # the 9B model loads silently into VRAM in the background.
+            asyncio.create_task(warmup_ollama())
+
+            self.state = ModelState.READY
+            logger.info("[RUNTIME] ASR and TTS models ready. Ollama warming up in background.")
+
         except Exception as e:
-            logger.error(f"Failed to spawn MiniOmni2 model server process: {e}")
-            self.state = InferenceRuntimeState.FAILED
-            
+            logger.error(f"[RUNTIME] Failed to load local speech models: {e}", exc_info=True)
+            self.state = ModelState.FAILED
+            self.whisper_model = None
+            self.kokoro_model = None
+
     def stop(self):
         """
-        Stops the managed model server.
+        Unloads models from memory and invokes garbage collection/CUDA cache clearing to release VRAM.
         """
-        if self.proc:
-            self.state = InferenceRuntimeState.STOPPING
-            logger.info("Terminating MiniOmni2 model server daemon process...")
-            try:
-                self.proc.terminate()
-                self.proc.wait(timeout=5.0)
-                logger.info("MiniOmni2 model server daemon stopped cleanly.")
-                self.state = InferenceRuntimeState.STOPPED
-            except Exception as e:
-                logger.error(f"Failed to cleanly terminate MiniOmni2 model server: {e}")
-                self.state = InferenceRuntimeState.FAILED
-            finally:
-                self.proc = None
-        else:
-            self.state = InferenceRuntimeState.STOPPED
+        if self.state == ModelState.UNLOADED:
+            return
 
-# Expose singleton instance for runtime management
+        self.state = ModelState.UNLOADING
+        logger.info("[RUNTIME] Unloading local models from memory...")
+
+        self.whisper_model = None
+        self.kokoro_model = None
+
+        # Force garbage collection and empty CUDA cache
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                logger.info("[RUNTIME] CUDA VRAM cache cleared successfully.")
+        except ImportError:
+            pass
+
+        self.state = ModelState.UNLOADED
+        logger.info("[RUNTIME] Inference runtime stopped and memory released.")
+
+# Expose a singleton instance for global runtime management
 inference_runtime_manager = InferenceRuntimeManager()

@@ -24,7 +24,12 @@ class VoiceService {
             event.data,
             () => voiceStore.setState({ speakingState: "SPEAKING" }),
             () => {
-              voiceStore.setState({ speakingState: this.isRecordingRef.current ? "LISTENING" : "INACTIVE" });
+              // Playback callback: set LISTENING if the mic is active, otherwise INACTIVE
+              if (audioService.isPlaying()) {
+                voiceStore.setState({ speakingState: "SPEAKING" });
+              } else {
+                voiceStore.setState({ speakingState: this.isRecordingRef.current ? "LISTENING" : "INACTIVE" });
+              }
             }
           );
           return;
@@ -37,7 +42,9 @@ class VoiceService {
           voiceStore.addLog(`SYS: ${msg.message}`);
         } else if (msg.type === "text") {
           voiceStore.addLog(`SENTINEL: ${msg.data}`);
-          voiceStore.setState({ speakingState: "THINKING" });
+          if (!audioService.isPlaying()) {
+            voiceStore.setState({ speakingState: "THINKING" });
+          }
         } else if (msg.type === "user") {
           voiceStore.addLog(`USER: ${msg.data}`);
         } else if (msg.type === "interrupt") {
@@ -56,8 +63,9 @@ class VoiceService {
             voiceStore.setState({ speakingState: "INACTIVE" });
             voiceStore.addLog("SYS: Sentinel is active and ready.");
           } else if (msg.state === "THINKING") {
-            voiceStore.setState({ speakingState: "THINKING" });
-            // Keep microphone open for hands-free continuous conversation and barge-in
+            if (!audioService.isPlaying()) {
+              voiceStore.setState({ speakingState: "THINKING" });
+            }
           }
         }
       },
@@ -90,11 +98,10 @@ class VoiceService {
         websocketService.send(JSON.stringify({ type: "governance", command: govCmd }));
       },
       (userSpeech) => {
-        // Bypassed local logging to avoid duplicate bubbles with Whisper ASR
+        // Speech ended callback from speechService (not used when VAD is active)
       },
       this.isRecordingRef,
       () => {
-        // Trigger listening state
         voiceStore.setState({ speakingState: "INACTIVE" });
       }
     );
@@ -111,6 +118,9 @@ class VoiceService {
   }
 
   async startRecording() {
+    // Guard: don't double-start
+    if (this.isRecordingRef.current) return;
+
     const { speakingState } = voiceStore.getState();
     if (speakingState === "STANDBY" || speakingState === "WAKING") {
       return;
@@ -130,6 +140,22 @@ class VoiceService {
             type: "config",
             sampleRate
           }));
+        },
+        () => {
+          // VAD detected end of speech (silence completed) — submit turn
+          if (websocketService.isOpen()) {
+            websocketService.send(JSON.stringify({ type: "turn_complete" }));
+            voiceStore.setState({ speakingState: "THINKING" });
+          }
+        },
+        () => {
+          // VAD detected start of speech — trigger interruption if Sentinel is speaking
+          if (audioService.isPlaying()) {
+            console.log("[VoiceService] Interruption detected! Stopping playback.");
+            audioService.stopAllAudio();
+            websocketService.send(JSON.stringify({ type: "governance", command: "stop" }));
+          }
+          voiceStore.setState({ speakingState: "LISTENING" });
         }
       );
     } catch (e) {
@@ -146,6 +172,7 @@ class VoiceService {
     voiceStore.setState({ speakingState: "INACTIVE" });
   }
 
+
   stopRecording() {
     this.isRecordingRef.current = false;
     voiceStore.setState({ isRecording: false, speakingState: "INACTIVE" });
@@ -154,7 +181,8 @@ class VoiceService {
     // Send definitive end-of-turn
     websocketService.send(JSON.stringify({ type: "turn_complete" }));
 
-    // Re-trigger speech service to start listening for wake words
+    // Keep speech recognition running for governance commands ("stop", etc.)
+    // Auto-restart of recording happens via the onPlaybackComplete callback above.
     speechService.start(
       () => {
         websocketService.send(JSON.stringify({ type: "wake_word" }));
@@ -169,7 +197,10 @@ class VoiceService {
         websocketService.send(JSON.stringify({ type: "governance", command: govCmd }));
       },
       (userSpeech) => {
-        // Bypassed local logging to avoid duplicate bubbles with Whisper ASR
+        // Automatically stop recording and submit when user finishes speaking
+        if (this.isRecordingRef.current) {
+          this.stopRecording();
+        }
       },
       this.isRecordingRef,
       () => {

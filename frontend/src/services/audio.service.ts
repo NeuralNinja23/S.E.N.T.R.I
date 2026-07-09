@@ -55,81 +55,118 @@ class AudioService {
     this.nextPlayTime = 0;
   }
 
-  async startRecording(onAudioChunk: (data: ArrayBuffer) => void, onSampleRateReady: (rate: number) => void) {
+  isPlaying() {
+    return this.activeSources.size > 0;
+  }
+
+
+  private vadInstance: any = null;
+  private isUserSpeaking = false;
+  private preSpeechBuffer: ArrayBuffer[] = [];
+  private readonly PRE_SPEECH_BUFFER_LIMIT = 15; // ~480ms of history to prevent prefix cutoffs
+
+  async startRecording(
+    onAudioChunk: (data: ArrayBuffer) => void,
+    onSampleRateReady: (rate: number) => void,
+    onEndOfSpeech: () => void,
+    onSpeechStart: () => void
+  ) {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
-      });
-
-      this.mediaStream = stream;
-
-      if (!this.recordingContext) {
-        this.recordingContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-      } else if (this.recordingContext.state === "suspended") {
-        await this.recordingContext.resume();
-      }
-
       if (!this.playbackContext) {
         this.playbackContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      } else if (this.playbackContext.state === "suspended") {
+      } else if (this.playbackContext.state === 'suspended') {
         await this.playbackContext.resume();
       }
 
-      const audioContext = this.recordingContext;
-      console.log(`[Sentinel Audio] AudioContext actual sampleRate: ${audioContext.sampleRate}Hz — worklet will resample to 16000Hz`);
-      const source = audioContext.createMediaStreamSource(stream);
+      this.isUserSpeaking = false;
+      this.preSpeechBuffer = [];
 
-      if (!this.isWorkletModuleAdded) {
-        try {
-          await audioContext.audioWorklet.addModule("/pcm-processor.js");
-          this.isWorkletModuleAdded = true;
-          console.log("[Sentinel Audio] pcm-processor worklet module loaded successfully.");
-        } catch (e) {
-          console.warn("AudioWorklet module already added or failed:", e);
-        }
+      // Lazily import @ricky0123/vad-web to avoid SSR (Node.js) build errors
+      if (!this.vadInstance) {
+        const { MicVAD } = await import("@ricky0123/vad-web");
+        
+        this.vadInstance = await MicVAD.new({
+          model: "v5",
+          baseAssetPath: "/",          // Serve silero_vad_v5.onnx and vad.worklet.bundle.min.js locally from public/
+          onnxWASMBasePath: "/",      // Serve ort-wasm-simd.wasm locally from public/
+          startOnLoad: false,
+          positiveSpeechThreshold: 0.45, // Tuned for high speech sensitivity
+          negativeSpeechThreshold: 0.32,
+          redemptionMs: 700,           // 700ms silence window before triggering end of speech
+          minSpeechMs: 250,            // Require at least 250ms of speech to trigger VAD
+          ortConfig: (ort) => {
+            ort.env.wasm.numThreads = 1; // Disable multi-threading to prevent CORS/COOP/COEP issues
+          },
+          onSpeechStart: () => {
+            console.log("[Sentinel VAD] Speech started.");
+            this.isUserSpeaking = true;
+            onSpeechStart();
+
+            // Flush pre-speech padding history to avoid prefix cutoff
+            for (const chunk of this.preSpeechBuffer) {
+              onAudioChunk(chunk);
+            }
+            this.preSpeechBuffer = [];
+          },
+          onFrameProcessed: (probabilities, frame) => {
+            // Convert Float32 resampled audio (16kHz) to PCM16
+            const buffer = new ArrayBuffer(frame.length * 2);
+            const view = new DataView(buffer);
+            for (let i = 0; i < frame.length; i++) {
+              const clamped = Math.max(-1.0, Math.min(1.0, frame[i]));
+              const intVal = clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF;
+              view.setInt16(i * 2, intVal, true);
+            }
+
+            if (this.isUserSpeaking) {
+              // Stream active speech to backend
+              onAudioChunk(buffer);
+            } else {
+              // Collect pre-speech padding frames
+              this.preSpeechBuffer.push(buffer);
+              if (this.preSpeechBuffer.length > this.PRE_SPEECH_BUFFER_LIMIT) {
+                this.preSpeechBuffer.shift();
+              }
+            }
+          },
+          onSpeechEnd: () => {
+            console.log("[Sentinel VAD] User finished speaking (speech end detected).");
+            this.isUserSpeaking = false;
+            this.preSpeechBuffer = [];
+            onEndOfSpeech();
+          }
+        });
       }
 
-      this.workletNode = new (window as any).AudioWorkletNode(audioContext, "pcm-processor");
+      // Always report 16000 Hz — MicVAD resamples internally to this rate
+      onSampleRateReady(16000);
 
-      source.connect(this.workletNode);
-      this.workletNode.connect(audioContext.destination);
+      // Start VAD processing and microphone capture
+      await this.vadInstance.start();
 
-      onSampleRateReady(audioContext.sampleRate);
-
-      this.workletNode.port.onmessage = (e: MessageEvent) => {
-        onAudioChunk(e.data);
-      };
     } catch (err) {
-      console.warn("Error accessing microphone:", err);
-      alert(`Microphone Error: ${err}\nPlease check your browser permissions.`);
+      console.error('[Sentinel Audio] Error starting VAD recording:', err);
+      alert(`Recording Error: ${err}\nPlease verify microphone permissions.`);
       throw err;
     }
   }
 
   stopRecording() {
-    if (this.workletNode) {
-      this.workletNode.disconnect();
-      this.workletNode = null;
+    if (this.vadInstance) {
+      this.vadInstance.pause(); // Stops mic stream and VAD loop
     }
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach((track) => track.stop());
-      this.mediaStream = null;
-    }
+    this.isUserSpeaking = false;
+    this.preSpeechBuffer = [];
     this.stopAllAudio();
   }
 
   cleanupHardware() {
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach((t) => {
-        t.stop();
-        console.log("Hardware track stopped on unload");
-      });
-      this.mediaStream = null;
+    if (this.vadInstance) {
+      this.vadInstance.destroy(); // Releases ONNX session and tracks
+      this.vadInstance = null;
     }
+    this.isUserSpeaking = false;
+    this.preSpeechBuffer = [];
     this.stopAllAudio();
   }
 }

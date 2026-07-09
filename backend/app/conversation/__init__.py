@@ -2,23 +2,20 @@ from .interfaces import ISpeechToSpeechModel
 from .session import ConversationSession
 from .registry import InferenceRegistry, InferenceInfo
 from .engine import ConversationEngine
-from .miniomni import MiniOmni2Model
-from .transport import ISpeechTransport, HttpSpeechTransport
+from .streaming_pipeline import StreamingSpeechPipeline
 
-# Register MiniOmni2 in InferenceRegistry upon package load
+# Register the restored local Decoupled StreamingSpeechPipeline
 InferenceRegistry.register(
-    id="miniomni2",
+    id="decoupled_pipeline",
     version="2.0",
     modality="speech",
-    implementation=MiniOmni2Model,
-    runtime="http",
+    implementation=StreamingSpeechPipeline,
+    runtime="local",
     capabilities={
         "speech_input",
         "speech_output",
         "streaming",
-        "interruptible",
-        "tool_calling",
-        "vision"
+        "interruptible"
     }
 )
 
@@ -28,6 +25,5 @@ __all__ = [
     "InferenceRegistry",
     "InferenceInfo",
     "ISpeechToSpeechModel",
-    "ISpeechTransport",
-    "HttpSpeechTransport"
+    "StreamingSpeechPipeline"
 ]

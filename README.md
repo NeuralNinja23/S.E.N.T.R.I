@@ -1,18 +1,60 @@
 # 🌌 S.E.N.T.I.N.E.L — Spatial AI Operating System
 
-Sentinel is a next-generation, high-performance intelligent agent operating system designed to plan, execute, and remember complex user interactions. It features a stunning, futuristic sci-fi HUD dashboard combined with a low-latency, native **Audio-to-Audio** pipeline powered by the Gemini Live API.
+<div align="center">
 
-![Sentinel Dashboard](./Docs/Images/dashboard_loaded_1781879359732.png)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Ollama](https://img.shields.io/badge/Ollama-Local_LLM-orange?style=for-the-badge)](https://ollama.com/)
+[![Kokoro TTS](https://img.shields.io/badge/Kokoro-Local_TTS-blueviolet?style=for-the-badge)](https://github.com/hexgrad/kokoro)
+[![Faster Whisper](https://img.shields.io/badge/Faster_Whisper-Local_ASR-green?style=for-the-badge)](https://github.com/SYSTRAN/faster-whisper)
+
+**Sentinel** is a next-generation, high-performance intelligent agent operating system designed to plan, execute, and remember complex user interactions. It features a stunning, futuristic sci-fi HUD dashboard combined with a low-latency, **fully local Audio-to-Audio** pipeline.
+
+</div>
+
+![Sentinel Dashboard](./Docs/Images/UI.png)
 
 ---
 
 ## 🚀 Key Features
 
-* **🎙️ Low-Latency Native Audio-to-Audio**: Direct microphone capture via browser `AudioWorkletNode` streaming raw PCM binary frames over WebSockets. The backend downsamples incoming frames in a thread-safe, bounded queue to 16kHz and pipes them directly to the Gemini Live session, achieving near-zero latency conversation without intermediate text transcriptions.
+* **🎙️ Low-Latency Local Audio-to-Audio**: Direct microphone capture via browser `AudioWorkletNode` streaming raw PCM binary frames over WebSockets. The backend downsamples incoming frames in a thread-safe, bounded queue to 16kHz and processes them through a decoupled local streaming speech pipeline:
+  * **ASR**: `faster_whisper` for lightning-fast, local speech-to-text transcription.
+  * **Reasoning**: `ollama` (running local models like `qwen3.5:4b`, `llama3`, etc.) to process instructions, reason through tasks, and maintain dialog state.
+  * **TTS**: `kokoro` (with native support for voices like `af_sarah`) for low-latency, high-fidelity local voice synthesis.
 * **🪐 Immersive Sci-Fi HUD Dashboard**: A premium, responsive interface featuring dynamic rotating orbitals, concentric arcs, real-time particle fields, and glowing gauges showing system CPU, memory, network speed, and disk storage metrics.
-* **👁️ Continuous OS-level Vision**: Background loop that captures the primary display, runs frame-diff analysis, and streams visual inputs directly to the Gemini Live session to let the AI "see" your screen.
-* **🛠️ Native Tool Execution**: Empowered with OS-level tools allowing Sentinel to inspect directory trees, read/write files, manage reminders, and track background tasks.
-* **🧠 Persistent categorised Memory**: Long-term categorical memory subsystem using Gemini to analyze, extract, and format key user facts, preferences, relationships, and wishes into structured long-term storage.
+* **🛠️ Native Tool Execution**: Built-in capabilities allowing Sentinel to inspect directory trees, read/write files, manage reminders, perform web searches, and track background tasks.
+* **🧠 Persistent Categorized Memory**: Long-term categorical memory subsystem to analyze, extract, and format key user facts, preferences, relationships, and wishes into structured long-term storage.
+* **👁️ Continuous OS-level Vision (Ready)**: Background display capture module using frame-diff analysis (resized grayscale MSE difference checking) to capture visual inputs and prepare them for vision-enabled reasoning loops.
+
+---
+
+## ⚡ Technical Architecture Details
+
+Sentinel uses a decoupled architecture where outer layers depend on inner abstractions, and inner layers never depend on outer implementations:
+
+```
+[Browser Client] 
+   │
+   ├─► (WebSockets) ──► WebSocket API [websocket.py]
+   │                      │
+   │                      ▼
+   │                  ConversationEngine ◄───► Memory / Prompt Builders
+   │                      │
+   │                      ▼
+   │                  StreamingSpeechPipeline (Local Modality)
+   │                      │
+   │                      ├───► [ASR] Faster Whisper (Transcribe speech)
+   │                      ├───► [LLM] Ollama / Local Models (Text Reasoning)
+   │                      └───► [TTS] Kokoro TTS (Generate audio synthesis)
+   │
+   └─► (HTTP polling) ─► System Stats Endpoint [system_stats.py]
+```
+
+### Decoupled Resampling and Streaming
+- **Microphone Audio**: Captured at native rates (e.g., 44.1kHz or 48kHz) in the browser, streamed over WebSockets as raw PCM16, downsampled to 16kHz on the backend, and accumulated per conversational turn.
+- **Audio Look-Ahead Scheduling**: Synthetic 24kHz audio generated by the local TTS is streamed back to the client and scheduled with precise look-aheads in the browser's Web Audio context to guarantee stutter-free playback.
 
 ---
 
@@ -22,10 +64,14 @@ Sentinel is a next-generation, high-performance intelligent agent operating syst
 ├── backend/                  # FastAPI Python Backend Service
 │   ├── app/
 │   │   ├── api/              # WebSocket & System Stats endpoints
-│   │   ├── Sentinel/         # Core features and OS settings
+│   │   ├── conversation/     # Decoupled speech pipeline, adapter & contracts
+│   │   │   └── streaming_pipeline/
+│   │   │       └── providers/# Providers for ASR, Reasoning, and TTS
+│   │   ├── Sentinel/         # Core features and OS tools
+│   │   │   └── tools/        # OS, memory, search, and mapper tools
 │   │   ├── config.py         # App configurations & AI instructions
 │   │   ├── main.py           # Lifespan handlers & app initialization
-│   │   └── services/         # Logger, Screen capture, & Vertex AI Services
+│   │   └── services/         # Logger & Screen capture services
 │   └── requirements.txt      # Python dependencies
 │
 └── frontend/                 # React & Next.js Tailwind UI (TypeScript)
@@ -38,7 +84,7 @@ Sentinel is a next-generation, high-performance intelligent agent operating syst
         │   └── ui/           # Custom Circular & Calendar Gauges
         ├── hooks/            # useVoice (mic capture) and useSystemStats hooks
         ├── services/         # Audio, Speech, WebSocket, and Voice controller layers
-        └── store/            # Zustands-like voice state store
+        └── store/            # Zustand-like voice state store
 ```
 
 ---
@@ -47,12 +93,35 @@ Sentinel is a next-generation, high-performance intelligent agent operating syst
 
 ### Prerequisites
 
-* Python 3.10+
-* Node.js 18+
-* Google Cloud CLI configured with Vertex AI access (Application Default Credentials).
+* **Python 3.10+**
+* **Node.js 18+**
+* **Ollama** installed and running locally.
+* **CUDA-compatible GPU** (Recommended for Whisper and Kokoro to run at peak speed).
 
-### 1. Run the Backend
+### 📦 Model Setup & Assets
 
+To keep the repository clean, model weights are excluded from Git. Here is how they are managed:
+1. **ASR (Whisper)**: The backend automatically downloads the `base` model from Hugging Face on the first startup.
+2. **TTS (Kokoro)**: The backend automatically downloads `kokoro-v1.0.onnx` and `voices-v1.0.bin` (total ~100MB) from the release mirror on the first startup, placing them in `backend/app/conversation/resources/`.
+3. **Frontend VAD (Silero)**: Place `silero_vad_v5.onnx` in the `frontend/public/` directory.
+   - You can download the pre-trained VAD ONNX model from the [Silero VAD GitHub repository](https://github.com/snakers4/silero-vad).
+
+
+### ⚡ Option A: Auto-Startup Manager (Windows Only)
+A startup script is included to quickly launch both services and run the interface in Chrome App Mode. To run it:
+1. Double-click or run `run_sentinel.bat` from the root directory.
+2. Closing the dedicated Chrome app window will automatically clean up and shut down both the Next.js and FastAPI servers.
+
+### ⚙️ Option B: Manual Setup
+
+#### 1. Configure Local Models
+1. Make sure **Ollama** is running locally:
+   ```bash
+   ollama run qwen3.5:4b
+   ```
+2. *(Optional)* Modify configurations in `backend/app/config.py` or set them in a `.env` file to customize model endpoints or speaker voices.
+
+#### 2. Run the Backend
 1. Navigate to the backend directory:
    ```bash
    cd backend
@@ -63,13 +132,12 @@ Sentinel is a next-generation, high-performance intelligent agent operating syst
    .\venv\Scripts\activate
    pip install -r requirements.txt
    ```
-3. Start the FastAPI server on port 8000:
+3. Start the FastAPI server (default port is `8008` as configured in the startup manager):
    ```bash
-   uvicorn app.main:app --reload --port 8000
+   uvicorn app.main:app --reload --port 8008
    ```
 
-### 2. Run the Frontend
-
+#### 3. Run the Frontend
 1. Navigate to the frontend directory:
    ```bash
    cd frontend
@@ -80,14 +148,6 @@ Sentinel is a next-generation, high-performance intelligent agent operating syst
    ```
 3. Run the Next.js development server:
    ```bash
-   npm run dev
+   npm run dev -- -p 3030
    ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## ⚡ Technical Architecture Details
-
-* **Downsampling & Resampling State Isolation**: Microphone audio is captured at the browser's native rate (e.g., 44.1kHz or 48kHz). The backend handles resampling using Python's `audioop.ratecv` package, resetting state parameters on conversational boundaries to ensure crystal-clear sound.
-* **Audio Look-Ahead Scheduling**: Received 24kHz PCM16 audio blocks from Gemini are queued and scheduled using precise time look-aheads in the browser's Web Audio API context, ensuring stutter-free audio output.
-* **Log Filtering**: Access log spam from the frontend system-stats polling is filtered out programmatically in uvicorn, keeping your console logs clean.
+4. Open [http://localhost:3030](http://localhost:3030) in your browser.

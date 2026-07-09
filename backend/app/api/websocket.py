@@ -1,14 +1,12 @@
 import json
 import asyncio
 import time
-import re
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from app.config import DATABASE_PATH, STANDBY_TIMEOUT_SECONDS, SENTINEL_SYSTEM_INSTRUCTION
+from app.config import STANDBY_TIMEOUT_SECONDS, SENTINEL_SYSTEM_INSTRUCTION
 from app.services.logger import get_logger
-from app.memory.graph import GraphMemoryStore
-from app.memory.graph_ops import build_warm_profile, format_warm_profile_block
 from app.runtime.runtime_state import runtime_store, RuntimeState, runtime_events
+from app.runtime.runtime_service import runtime_service
 
 from app.conversation import ConversationEngine, ConversationSession
 from app.api.upload import get_all_documents_text_context
@@ -16,9 +14,8 @@ from app.api.upload import get_all_documents_text_context
 router = APIRouter()
 logger = get_logger("websocket")
 
-# Initialize graph memory store pointing to Sentinel.db
-memory_store = GraphMemoryStore(DATABASE_PATH)
 conversation_engine = ConversationEngine()
+
 
 async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: ConversationSession):
     """Processes speech input with MiniOmni2, tracking TTFT and TTFA latency metrics."""
@@ -32,12 +29,19 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: 
             yield speech_bytes
             
         logger.info(f"[SESSION {session.session_id}] Sending speech turn to ConversationEngine...")
-        response_generator = conversation_engine.run_voice_turn(audio_generator())
+        response_generator = conversation_engine.run_voice_turn(
+            audio_generator(),
+            history=session.conversation_history
+        )
         
         first_chunk = True
         accumulated_text = []
         
         async for chunk in response_generator:
+            if not session.speaking:
+                logger.info(f"[SESSION {session.session_id}] Speech turn aborted/interrupted by governance.")
+                break
+
             if chunk.get("type") == "system" and chunk.get("status") == "conversation_engine_missing":
                 await websocket.send_json(chunk)
                 break
@@ -56,6 +60,9 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: 
                 session.metrics.add_tokens(len(chunk["data"].split()))
                 accumulated_text.append(chunk["data"])
                 await websocket.send_json({"type": "text", "data": chunk["data"]})
+            elif chunk["type"] == "user_transcript":
+                session.append_user_turn(chunk["data"])
+                await websocket.send_json({"type": "user", "data": chunk["data"]})
                 
         final_response = "".join(accumulated_text).strip()
         session.end_turn(final_text=final_response)
@@ -158,7 +165,6 @@ async def voice_websocket(websocket: WebSocket):
 
     # Inactivity checker task
     async def inactivity_checker():
-        from app.runtime.runtime_service import runtime_service
         while True:
             try:
                 await asyncio.sleep(10)
@@ -201,7 +207,6 @@ async def voice_websocket(websocket: WebSocket):
                 if is_wake_trigger:
                     logger.info("Wake word/command received. Waking up.")
                     runtime_store.update_activity()
-                    from app.runtime.runtime_service import runtime_service
                     asyncio.create_task(runtime_service.wake(websocket))
                 continue
             else:
@@ -221,10 +226,8 @@ async def voice_websocket(websocket: WebSocket):
                         cmd_text = payload.get("text", "")
                         if cmd_text:
                             if cmd_text.upper().strip() == "ENTER_STANDBY":
-                                from app.runtime.runtime_service import runtime_service
                                 runtime_service.standby()
                             elif cmd_text.upper().strip() == "EXIT_STANDBY":
-                                from app.runtime.runtime_service import runtime_service
                                 asyncio.create_task(runtime_service.wake(websocket))
                             else:
                                 # Intercept and process local text queries (which still works)
@@ -246,10 +249,8 @@ async def voice_websocket(websocket: WebSocket):
                             session.speaking = False
                             await websocket.send_json({"type": "interrupt"})
                         elif cmd == "enter_standby":
-                            from app.runtime.runtime_service import runtime_service
                             runtime_service.standby()
                         elif cmd == "exit_standby":
-                            from app.runtime.runtime_service import runtime_service
                             asyncio.create_task(runtime_service.wake(websocket))
                             
                     elif p_type == "turn_complete":

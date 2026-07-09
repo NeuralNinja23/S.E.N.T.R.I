@@ -1,8 +1,6 @@
-import os
 import json
-from pathlib import Path
 from app.services.logger import get_logger
-from app.Sentinel.tools.fs_tools import ROOT_DIR, _secure_path
+from app.Sentinel.tools.fs_tools import ROOT_DIR, resolve_absolute_path
 
 logger = get_logger("mapper_tools")
 
@@ -67,8 +65,8 @@ def find_dependencies(file_path: str) -> str:
     Parses a specific file and extracts all its imports and dependencies.
     Returns JSON string.
     """
-    # FIX #47: Use _secure_path to prevent LFI (path traversal)
-    target = _secure_path(file_path)
+    # Resolve path to target file
+    target = resolve_absolute_path(file_path)
     if not target:
         return json.dumps({"error": f"Restricted path: {file_path}"})
         

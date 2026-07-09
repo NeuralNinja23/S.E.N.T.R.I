@@ -50,10 +50,11 @@ class SpeechService {
         return;
       }
 
+      // NOTE: We intentionally do NOT auto-stop recording here.
+      // Web Speech API fires isFinal aggressively, often mid-sentence.
+      // Turn completion is handled exclusively by the user releasing the button
+      // (manual push-to-talk), which calls stopRecording() → turn_complete.
       if (isRecordingRef.current) {
-        if (isFinal && transcript.trim()) {
-          onUserSpeech(transcript.trim());
-        }
         return;
       }
 

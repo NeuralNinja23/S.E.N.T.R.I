@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from typing import Dict, Type, Any, Set, Optional
-from .interfaces import ISpeechToSpeechModel
 
 @dataclass
 class InferenceInfo:

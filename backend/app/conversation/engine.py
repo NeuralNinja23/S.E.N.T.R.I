@@ -23,11 +23,12 @@ class ConversationEngine:
         
     async def run_voice_turn(
         self, 
-        input_audio_stream: AsyncGenerator[bytes, None]
+        input_audio_stream: AsyncGenerator[bytes, None],
+        history: list = None
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Executes a real-time duplex voice turn.
-        Yields structured statuses or audio/text packets.
+        Yields structured statuses or audio/text/transcript packets.
         """
         if not self.model:
             yield {
@@ -38,11 +39,20 @@ class ConversationEngine:
             return
             
         if hasattr(self.model, "process_audio_stream_with_text"):
-            async for event_type, content in self.model.process_audio_stream_with_text(input_audio_stream):
+            import inspect
+            sig = inspect.signature(self.model.process_audio_stream_with_text)
+            if "history" in sig.parameters:
+                response_gen = self.model.process_audio_stream_with_text(input_audio_stream, history=history)
+            else:
+                response_gen = self.model.process_audio_stream_with_text(input_audio_stream)
+
+            async for event_type, content in response_gen:
                 if event_type == "audio":
                     yield {"type": "audio", "data": content}
                 elif event_type == "text":
                     yield {"type": "text", "data": content}
+                elif event_type == "user_transcript":
+                    yield {"type": "user_transcript", "data": content}
         else:
             async for output_chunk in self.model.process_audio_stream(input_audio_stream):
                 yield {"type": "audio", "data": output_chunk}

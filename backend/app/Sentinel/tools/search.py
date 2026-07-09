@@ -13,8 +13,8 @@ def search_code(query: str, search_type: str = "text", path: str = ".") -> str:
     search_type can be: 'text', 'filename', 'class', 'function', 'symbol'
     Returns JSON string with matching files and snippets.
     """
-    from app.Sentinel.tools.fs_tools import _secure_path
-    search_root = _secure_path(path) if path else ROOT_DIR
+    from app.Sentinel.tools.fs_tools import resolve_absolute_path
+    search_root = resolve_absolute_path(path) if path else ROOT_DIR
     logger.info(f"Searching {search_root} for '{query}' (type: {search_type})")
     
     results = []
