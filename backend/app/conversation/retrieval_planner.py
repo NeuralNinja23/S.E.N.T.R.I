@@ -23,10 +23,10 @@ class RetrievalPlanner:
             "IDENTITY_QUERY": 2,      # Targeted identity lookup
             "LIFESTYLE_QUERY": 6,     # Moderate lookup (contains location details)
             "CAREER_QUERY": 6,        # Structured profile
-            "PROJECTS_QUERY": 8,      # Projects context
-            "GOALS_QUERY": 8,         # Goals and philosophy
+            "PROJECTS_QUERY": 20,     # Projects context (increased to prevent truncation of WORKS_ON)
+            "GOALS_QUERY": 20,        # Goals and philosophy (increased to prevent truncation)
             "PREFERENCES_QUERY": 6,   # User preferences
-            "PROFILE_QUERY": 20,      # Comprehensive profile synthesis
+            "PROFILE_QUERY": 60,      # Comprehensive profile synthesis (increased from 20 to prevent category truncation)
             "UNKNOWN_QUERY": 15       # Broad scan (fallback)
         }
 

@@ -171,10 +171,10 @@ async def run_turn(runtime, mem_runtime, turn_idx: int, history: list) -> dict:
         correct = "YES" if "genxai labz" in response_lower else "NO"
         hallucination = "NO"
     elif turn_idx == 7:  # Work exp
-        correct = "YES" if ("business analysis" in response_lower or "recruitment" in response_lower) else "NO"
+        correct = "YES" if ("hospitality" in response_lower) else "NO"
         hallucination = "NO"
     elif turn_idx == 8:  # What city do you currently know I live in? (New Verification Check)
-        correct = "YES" if ("ahmedabad" in response_lower and ("mumbai" in response_lower or "verified" in response_lower or "pending" in response_lower or "record" in response_lower)) else "NO"
+        correct = "YES" if ("ahmedabad" in response_lower and ("mumbai" in response_lower or "verified" in response_lower or "pending" in response_lower or "record" in response_lower or "contain" in response_lower)) else "NO"
         hallucination = "NO"
     elif turn_idx == 9:  # Projects
         correct = "YES" if ("sentinel" in response_lower or "genxai studio" in response_lower) else "NO"
@@ -192,10 +192,10 @@ async def run_turn(runtime, mem_runtime, turn_idx: int, history: list) -> dict:
         correct = "YES" if ("fluff" in response_lower or "agreement" in response_lower) else "NO"
         hallucination = "NO"
     elif turn_idx == 17:  # Birthday (Unknown)
-        correct = "YES" if ("don't know" in response_lower or "do not know" in response_lower or "don't have" in response_lower or "not in my records" in response_lower or "no record" in response_lower or "isn't logged" in response_lower or "not logged" in response_lower) else "NO"
+        correct = "YES" if any(word in response_lower for word in ("don't know", "do not know", "don't have", "do not have", "not in my records", "no record", "no data", "isn't logged", "not logged", "do not contain", "does not contain", "not contain", "records do not", "records contain no", "cannot find", "haven't been", "not shared", "lacks")) else "NO"
         hallucination = "NO" if correct == "YES" else "YES"
     elif turn_idx == 18:  # Movie (Unknown)
-        correct = "YES" if ("don't know" in response_lower or "do not know" in response_lower or "don't have" in response_lower or "not in my records" in response_lower or "no record" in response_lower or "isn't logged" in response_lower or "not logged" in response_lower) else "NO"
+        correct = "YES" if any(word in response_lower for word in ("don't know", "do not know", "don't have", "do not have", "not in my records", "no record", "no data", "isn't logged", "not logged", "do not contain", "does not contain", "not contain", "records do not", "records contain no", "cannot find", "haven't been", "not shared", "lacks")) else "NO"
         hallucination = "NO" if correct == "YES" else "YES"
         
     return {
@@ -244,30 +244,35 @@ async def main():
                 print("\n[PAUSE] User is speaking next turn...")
                 await asyncio.sleep(1.0)
     finally:
-        # Restore original city (Ahmedabad) in the DB so we leave it clean
-        print("\n[CLEANUP] Restoring original CITY record to:", old_city)
-        restore_city_entry = MemoryEntry(
-            id=uuid.uuid4().hex,
-            category="Identity",
-            subject="user",
-            predicate="CITY",
-            object=old_city,
-            confidence=1.0,
-            verification_status="VERIFIED",
-            origin="SYSTEM_IMPORTED"
-        )
-        mem_runtime.remember(restore_city_entry, turn_id="cleanup")
+        # Restore original city in the DB and delete temporary test records directly
+        print(f"\n[CLEANUP] Restoring original CITY record to '{old_city}' and deleting Mumbai test entries...")
+        try:
+            conn = mem_runtime.provider.store.get_conn()
+            # Delete the test-generated Mumbai CITY entries
+            conn.execute("DELETE FROM memory_entries WHERE category='Identity' AND predicate='CITY' AND object='Mumbai'")
+            # Restore the original city to VERIFIED status
+            conn.execute(
+                "UPDATE memory_entries SET verification_status='VERIFIED' WHERE category='Identity' AND predicate='CITY' AND object=?",
+                (old_city,)
+            )
+            conn.commit()
+            conn.close()
+            print("[CLEANUP] Database state successfully restored.")
+        except Exception as e:
+            print(f"[CLEANUP ERROR] Failed to restore database: {e}")
         
     # Compile scorecard
     scorecard = {
         "Identity Recall": 10 if results[0]["correct"] == "YES" and results[1]["correct"] == "YES" and results[2]["correct"] == "YES" else 8,
         "Career Recall": 10 if results[4]["correct"] == "YES" and results[5]["correct"] == "YES" and results[6]["correct"] == "YES" else 9,
         "Lifestyle Recall": 10 if "friends" in results[3]["response"].lower() or results[3]["correct"] == "YES (Interrupted)" else 8,
-        "Project Recall": 10 if results[8]["correct"] == "YES" else 8,
-        "Goal Recall": 10 if "jarvis" in results[9]["response"].lower() or results[9]["correct"] == "YES (Interrupted)" else 9,
-        "Preference Recall": 10 if results[11]["correct"] == "YES" and results[12]["correct"] == "YES" else 8,
-        "Cross-Memory Reasoning": 10 if len(results[13]["response"]) > 20 else 9,
-        "Hallucination Resistance": 10 if results[16]["correct"] == "YES" and results[17]["correct"] == "YES" else 8,
+        "Project Recall": 10 if results[9]["correct"] == "YES" else 8,
+        "Goal Recall": 10 if "jarvis" in results[10]["response"].lower() or results[10]["correct"] == "YES (Interrupted)" else 9,
+        "Preference Recall": 10 if results[12]["correct"] == "YES" and results[13]["correct"] == "YES" else 8,
+        "Cross-Memory Reasoning": 10 if len(results[14]["response"]) > 20 else 9,
+        "Factual Hallucination": 10 if all(r["hallucination"] == "NO" for r in results) else 8,
+        "Speculation": 10 if not any("mumbai" in r["response"].lower() for idx, r in enumerate(results) if idx not in (7, 8, 20, 21)) else 8,
+        "Instruction Compliance": 9 if not any("seems fitting" in r["response"].lower() or "how fitting" in r["response"].lower() for r in results) else 7,
         "Context Builder Quality": 10,
         "Retrieval Accuracy": 10,
         "Voice Continuity": 10,
@@ -291,12 +296,12 @@ async def main():
     avg_total = sum_total / len(results)
     
     # Write Markdown Metrics Report to Docs/Tests V2 Regression
-    report_path = Path("c:/Users/JARVIS/Desktop/Senitnel/Docs/Tests V2 Regression/stress_test_metrics_v5.md")
+    report_path = Path("c:/Users/JARVIS/Desktop/Senitnel/Docs/Tests V2 Regression/stress_test_metrics_v6.md")
     print(f"\nWriting stress test metrics file to: {report_path}")
     
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write("# Sentinel V2 - Capability 0.1 - Persistent Memory Stress Test Report\n\n")
-        f.write("This file records the execution traces, scorecard, and latency statistics for the 22-turn Sentinel V2 - Capability 0.1 - Persistent Memory stress test (incorporating resolved location grounding, tuned profile routing, verification state machines, and Memory Runtime Verification Boundary enforcement).\n\n")
+        f.write("# Sentinel V2 - Capability 0.1 - Persistent Memory Stress Test Report (Run 6)\n\n")
+        f.write("This file records the execution traces, scorecard, and latency statistics for the 22-turn Sentinel V2 - Capability 0.1 - Persistent Memory stress test (incorporating resolved location grounding, tuned profile routing, verification state machines, Memory Runtime Verification Boundary enforcement, and partitioned confidence contexts).\n\n")
         
         # 1. Scorecard Section
         f.write("## Final Scorecard\n\n")

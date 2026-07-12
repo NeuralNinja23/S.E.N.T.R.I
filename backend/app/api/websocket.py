@@ -113,7 +113,7 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
             
             res_memories = []
             for category in categories:
-                q = MemoryQuery(category=category, subject="user", limit=budget, include_inferred=False)
+                q = MemoryQuery(category=category, subject="user", limit=budget, include_inferred=True)
                 res = memory_runtime.recall(q)
                 res_memories.extend(res.memories)
                 

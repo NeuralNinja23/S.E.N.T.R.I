@@ -208,7 +208,7 @@ class ConversationRuntime(ISpeechToSpeechModel):
             
             res_memories = []
             for category in categories:
-                q = MemoryQuery(category=category, subject="user", limit=budget, include_inferred=False)
+                q = MemoryQuery(category=category, subject="user", limit=budget, include_inferred=True)
                 res = m_runtime.recall(q)
                 res_memories.extend(res.memories)
                 
