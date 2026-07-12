@@ -13,7 +13,7 @@ ASR_PROVIDER = os.getenv("ASR_PROVIDER", "faster_whisper")
 REASONING_PROVIDER = os.getenv("REASONING_PROVIDER", "ollama")
 REASONING_MODEL = os.getenv("REASONING_MODEL", "qwen3.5:4b")
 TTS_PROVIDER = os.getenv("TTS_PROVIDER", "kokoro")
-TTS_SPEAKER_VOICE = os.getenv("TTS_SPEAKER_VOICE", "af_sarah")
+TTS_SPEAKER_VOICE = os.getenv("TTS_SPEAKER_VOICE", "bm_george")
 
 
 # Vision Settings
@@ -22,6 +22,13 @@ VISION_MIN_DIFF = 50.0  # minimum MSE difference to trigger an upload
 
 # Standby Settings
 STANDBY_TIMEOUT_SECONDS = 900  # 15 minutes of inactivity before auto-standby
+
+# Memory Database Configuration
+MEMORY_DB_PATH = os.getenv(
+    "MEMORY_DB_PATH",
+    str(Path(__file__).resolve().parent / "Sentinel" / "storage" / "sentinel_memory.db")
+)
+
 
 # System Instruction Template Loader
 instruction_path = Path(__file__).parent / "Sentinel" / "Instructions" / "sentinel.md"

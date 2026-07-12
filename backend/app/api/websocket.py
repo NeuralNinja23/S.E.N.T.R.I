@@ -16,6 +16,12 @@ logger = get_logger("websocket")
 
 conversation_engine = ConversationEngine()
 
+from app.memory.runtime import MemoryRuntime
+from app.memory.context_builder import MemoryContextBuilder
+from app.memory.contracts import MemoryQuery
+
+memory_runtime = MemoryRuntime()
+
 
 async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: ConversationSession):
     """Processes speech input with MiniOmni2, tracking TTFT and TTFA latency metrics."""
@@ -98,15 +104,32 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
         
         # 1. Reasoning (Ollama LLM)
         try:
-            profile = build_warm_profile(memory_store, user_max_chars=4000, directives_max_chars=2000)
-            warm_profile_block = format_warm_profile_block(profile)
+            from app.conversation.intent_analysis import IntentAnalyzer
+            from app.conversation.retrieval_planner import RetrievalPlanner
+            analyzer = IntentAnalyzer()
+            planner = RetrievalPlanner()
+            intent = analyzer.analyze(text_query)
+            categories, budget = planner.plan(intent)
+            
+            res_memories = []
+            for category in categories:
+                q = MemoryQuery(category=category, subject="user", limit=budget, include_inferred=False)
+                res = memory_runtime.recall(q)
+                res_memories.extend(res.memories)
+                
+            warm_profile_block = MemoryContextBuilder.build_context(res_memories, max_chars=6000, limit=budget)
         except Exception as mem_err:
-            logger.error(f"Failed to build warm profile: {mem_err}")
+            logger.error(f"Failed to build memory profile: {mem_err}")
             warm_profile_block = ""
             
+        import os
         import datetime
         current_dt = datetime.datetime.now().strftime("%A, %B %d, %Y, %I:%M %p")
-        time_context = f"\n\n[Current Local Time Context]\nTime: {current_dt}\nLocation: Anti Noob Media HQ (Home/Office)\n"
+        time_context = f"\n\n=== TEMPORAL & ENVIRONMENT REALITY ===\n- Current Date/Time: {current_dt}\n"
+        location = os.getenv("LOCAL_LOCATION")
+        if location:
+            time_context += f"- Current Location: {location}\n"
+        time_context += "======================================\n"
         
         final_instruction = SENTINEL_SYSTEM_INSTRUCTION + time_context
         if warm_profile_block:

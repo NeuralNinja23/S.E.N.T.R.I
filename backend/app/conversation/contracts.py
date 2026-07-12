@@ -63,6 +63,61 @@ class Transcript:
     """
     text: str
 
+import asyncio
+
+@dataclass
+class ConversationClock:
+    """Tracks raw event timestamps and queue wait times for detailed execution profiling."""
+    mic_open_time: float = 0.0
+    speech_start_time: float = 0.0
+    speech_end_time: float = 0.0  # VAD silence completion
+    
+    asr_queued_time: float = 0.0
+    asr_start_time: float = 0.0
+    asr_end_time: float = 0.0
+    
+    prompt_built_time: float = 0.0
+    
+    llm_queued_time: float = 0.0
+    llm_start_time: float = 0.0
+    first_token_time: float = 0.0
+    llm_end_time: float = 0.0
+    
+    planner_queued_time: float = 0.0
+    first_phrase_time: float = 0.0
+    
+    tts_queued_time: float = 0.0
+    tts_start_time: float = 0.0
+    first_audio_frame_time: float = 0.0
+    tts_end_time: float = 0.0
+    
+    playback_queued_time: float = 0.0
+    playback_start_time: float = 0.0
+    playback_finish_time: float = 0.0
+
+@dataclass
+class TurnContext:
+    """Represents the pure domain state of a conversation turn (what the system knows)."""
+    turn_id: str
+    cancel_token: asyncio.Event = field(default_factory=asyncio.Event)
+    
+    # Inputs & intermediate results
+    user_audio: bytes = b""
+    transcript: str = ""
+    memory_context: str = ""
+    system_prompt: str = ""
+    reasoning_response: str = ""
+    
+    # Execution metrics and clock
+    clock: ConversationClock = field(default_factory=ConversationClock)
+
+class TurnChannels:
+    """Represents the transport plane for streaming data between pipeline workers."""
+    def __init__(self):
+        self.token_queue: asyncio.Queue[str] = asyncio.Queue()
+        self.phrase_queue: asyncio.Queue[str] = asyncio.Queue()
+        self.audio_queue: asyncio.Queue[bytes] = asyncio.Queue()
+
 @dataclass
 class ConversationTurn:
     """
@@ -76,3 +131,4 @@ class ConversationTurn:
     reasoning_response: Optional[str] = None
     audio_chunks: List[AudioChunk] = field(default_factory=list)
     metrics: VoiceMetrics = field(default_factory=VoiceMetrics)
+

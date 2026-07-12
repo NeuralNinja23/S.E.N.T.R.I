@@ -44,7 +44,7 @@ class OllamaReasoningProvider(ReasoningProvider):
                 role = "assistant"
             mapped_history.append({
                 "role": role,
-                "content": msg.get("text", "")
+                "content": msg.get("text", "") or msg.get("content", "")
             })
 
         messages = [{"role": "system", "content": system_content}]

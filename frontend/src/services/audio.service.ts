@@ -1,69 +1,128 @@
 import { pcm16ToFloat32 } from "./audio";
 
-class AudioService {
-  private recordingContext: AudioContext | null = null;
-  private playbackContext: AudioContext | null = null;
-  private mediaStream: MediaStream | null = null;
-  private activeSources = new Set<AudioBufferSourceNode>();
-  private nextPlayTime = 0;
-  private workletNode: any = null;
-  private isWorkletModuleAdded = false;
+// Exposed VAD Timing & Sensitivity Configurations
+export const VAD_REDEMPTION_MS = 350; // Silence window (ms) before triggering speech finish
+export const VAD_PRE_SPEECH_MS = 250;  // Minimum speech duration (ms) to trigger VAD start
+export const VAD_SPEECH_PAD_MS = 480;  // Padding history limit (ms) to avoid cut-off prefixes
 
-  playAudioChunk(arrayBuffer: ArrayBuffer, onStart: () => void, onEnded: () => void) {
+class PlaybackScheduler {
+  private audioContext: AudioContext;
+  private activeSources: Set<AudioBufferSourceNode> = new Set();
+  private activeGains: Set<GainNode> = new Set();
+  private nextPlayTime = 0;
+
+  constructor(audioContext: AudioContext) {
+    this.audioContext = audioContext;
+  }
+
+  enqueue(arrayBuffer: ArrayBuffer, onStart: () => void, onEnded: () => void) {
     onStart();
 
-    if (!this.playbackContext) {
-      this.playbackContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-    }
-    const audioContext = this.playbackContext;
-
     const float32Array = pcm16ToFloat32(arrayBuffer);
-
-    const audioBuffer = audioContext.createBuffer(1, float32Array.length, 24000);
+    const audioBuffer = this.audioContext.createBuffer(1, float32Array.length, 24000);
     audioBuffer.getChannelData(0).set(float32Array);
 
-    const source = audioContext.createBufferSource();
+    const source = this.audioContext.createBufferSource();
     source.buffer = audioBuffer;
-    source.connect(audioContext.destination);
+
+    // Create GainNode for smooth crossfades and artifact-free interruptions
+    const gainNode = this.audioContext.createGain();
+    source.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
 
     this.activeSources.add(source);
+    this.activeGains.add(gainNode);
 
-    if (this.nextPlayTime < audioContext.currentTime) {
-      this.nextPlayTime = audioContext.currentTime + 0.05;
+    const now = this.audioContext.currentTime;
+    
+    // Eliminate the 50ms delay: schedule back-to-back chunks with 0ms gap
+    if (this.nextPlayTime < now) {
+      this.nextPlayTime = now;
     }
+    
     source.start(this.nextPlayTime);
     this.nextPlayTime += audioBuffer.duration;
 
     source.onended = () => {
       this.activeSources.delete(source);
+      this.activeGains.delete(gainNode);
+      source.disconnect();
+      gainNode.disconnect();
       if (this.activeSources.size === 0) {
         onEnded();
       }
     };
   }
 
-  stopAllAudio() {
-    this.activeSources.forEach((source) => {
+  interrupt() {
+    const now = this.audioContext.currentTime;
+    
+    // Apply a fast exponential ramp-down to prevent clicks (50ms fade-out)
+    this.activeGains.forEach((gainNode) => {
       try {
-        source.stop();
-        source.disconnect();
+        gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
       } catch (e) {
-        // Already stopped
+        // fallback to direct mute if context state is unstable
+        gainNode.gain.value = 0;
       }
     });
-    this.activeSources.clear();
+
+    // Terminate sources after fade-out completion
+    setTimeout(() => {
+      this.activeSources.forEach((source) => {
+        try {
+          source.stop();
+          source.disconnect();
+        } catch (e) {}
+      });
+      this.activeSources.clear();
+      this.activeGains.clear();
+    }, 55);
+
     this.nextPlayTime = 0;
   }
 
-  isPlaying() {
+  isPlaying(): boolean {
     return this.activeSources.size > 0;
   }
+}
 
+class AudioService {
+  private recordingContext: AudioContext | null = null;
+  private playbackContext: AudioContext | null = null;
+  private mediaStream: MediaStream | null = null;
+  private scheduler: PlaybackScheduler | null = null;
+  private workletNode: any = null;
+  private isWorkletModuleAdded = false;
+
+  playAudioChunk(arrayBuffer: ArrayBuffer, onStart: () => void, onEnded: () => void) {
+    if (!this.playbackContext) {
+      this.playbackContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+      this.scheduler = new PlaybackScheduler(this.playbackContext);
+    }
+    this.scheduler!.enqueue(arrayBuffer, onStart, onEnded);
+  }
+
+  stopAllAudio() {
+    if (this.scheduler) {
+      this.scheduler.interrupt();
+    }
+  }
+
+  isPlaying() {
+    return this.scheduler ? this.scheduler.isPlaying() : false;
+  }
 
   private vadInstance: any = null;
   private isUserSpeaking = false;
   private preSpeechBuffer: ArrayBuffer[] = [];
-  private readonly PRE_SPEECH_BUFFER_LIMIT = 15; // ~480ms of history to prevent prefix cutoffs
+  
+  // Calculate buffer history size limit dynamically based on exposed VAD configs
+  private getPreSpeechLimit(): number {
+    const frameSizeMs = 32; // Standard MicVAD frame duration
+    return Math.round(VAD_SPEECH_PAD_MS / frameSizeMs);
+  }
 
   async startRecording(
     onAudioChunk: (data: ArrayBuffer) => void,
@@ -74,6 +133,7 @@ class AudioService {
     try {
       if (!this.playbackContext) {
         this.playbackContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+        this.scheduler = new PlaybackScheduler(this.playbackContext);
       } else if (this.playbackContext.state === 'suspended') {
         await this.playbackContext.resume();
       }
@@ -81,7 +141,6 @@ class AudioService {
       this.isUserSpeaking = false;
       this.preSpeechBuffer = [];
 
-      // Lazily import @ricky0123/vad-web to avoid SSR (Node.js) build errors
       if (!this.vadInstance) {
         const { MicVAD } = await import("@ricky0123/vad-web");
         
@@ -90,26 +149,24 @@ class AudioService {
           baseAssetPath: "/",          // Serve silero_vad_v5.onnx and vad.worklet.bundle.min.js locally from public/
           onnxWASMBasePath: "/",      // Serve ort-wasm-simd.wasm locally from public/
           startOnLoad: false,
-          positiveSpeechThreshold: 0.45, // Tuned for high speech sensitivity
+          positiveSpeechThreshold: 0.45,
           negativeSpeechThreshold: 0.32,
-          redemptionMs: 700,           // 700ms silence window before triggering end of speech
-          minSpeechMs: 250,            // Require at least 250ms of speech to trigger VAD
+          redemptionMs: VAD_REDEMPTION_MS,
+          minSpeechMs: VAD_PRE_SPEECH_MS,
           ortConfig: (ort) => {
-            ort.env.wasm.numThreads = 1; // Disable multi-threading to prevent CORS/COOP/COEP issues
+            ort.env.wasm.numThreads = 1;
           },
           onSpeechStart: () => {
             console.log("[Sentinel VAD] Speech started.");
             this.isUserSpeaking = true;
             onSpeechStart();
 
-            // Flush pre-speech padding history to avoid prefix cutoff
             for (const chunk of this.preSpeechBuffer) {
               onAudioChunk(chunk);
             }
             this.preSpeechBuffer = [];
           },
           onFrameProcessed: (probabilities, frame) => {
-            // Convert Float32 resampled audio (16kHz) to PCM16
             const buffer = new ArrayBuffer(frame.length * 2);
             const view = new DataView(buffer);
             for (let i = 0; i < frame.length; i++) {
@@ -119,18 +176,17 @@ class AudioService {
             }
 
             if (this.isUserSpeaking) {
-              // Stream active speech to backend
               onAudioChunk(buffer);
             } else {
-              // Collect pre-speech padding frames
               this.preSpeechBuffer.push(buffer);
-              if (this.preSpeechBuffer.length > this.PRE_SPEECH_BUFFER_LIMIT) {
+              const limit = this.getPreSpeechLimit();
+              if (this.preSpeechBuffer.length > limit) {
                 this.preSpeechBuffer.shift();
               }
             }
           },
           onSpeechEnd: () => {
-            console.log("[Sentinel VAD] User finished speaking (speech end detected).");
+            console.log("[Sentinel VAD] User finished speaking.");
             this.isUserSpeaking = false;
             this.preSpeechBuffer = [];
             onEndOfSpeech();
@@ -138,10 +194,7 @@ class AudioService {
         });
       }
 
-      // Always report 16000 Hz — MicVAD resamples internally to this rate
       onSampleRateReady(16000);
-
-      // Start VAD processing and microphone capture
       await this.vadInstance.start();
 
     } catch (err) {
@@ -153,7 +206,7 @@ class AudioService {
 
   stopRecording() {
     if (this.vadInstance) {
-      this.vadInstance.pause(); // Stops mic stream and VAD loop
+      this.vadInstance.pause();
     }
     this.isUserSpeaking = false;
     this.preSpeechBuffer = [];
@@ -162,7 +215,7 @@ class AudioService {
 
   cleanupHardware() {
     if (this.vadInstance) {
-      this.vadInstance.destroy(); // Releases ONNX session and tracks
+      this.vadInstance.destroy();
       this.vadInstance = null;
     }
     this.isUserSpeaking = false;

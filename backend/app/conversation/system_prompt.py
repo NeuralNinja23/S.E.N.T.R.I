@@ -26,10 +26,14 @@ class SystemPromptProvider:
         except FileNotFoundError:
             base_instruction = "You are Sentinel, a highly sophisticated digital assistant."
 
+        import os
         current_dt = datetime.datetime.now().strftime("%A, %B %d, %Y, %I:%M %p")
         time_context = (
-            f"\n\n[Current Local Time Context]\n"
-            f"Time: {current_dt}\n"
-            f"Location: Anti Noob Media HQ (Home/Office)\n"
+            f"\n\n=== TEMPORAL & ENVIRONMENT REALITY ===\n"
+            f"- Current Date/Time: {current_dt}\n"
         )
+        location = os.getenv("LOCAL_LOCATION")
+        if location:
+            time_context += f"- Current Location: {location}\n"
+        time_context += "======================================\n"
         return base_instruction + time_context

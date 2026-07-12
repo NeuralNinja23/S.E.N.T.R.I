@@ -87,15 +87,40 @@ class InferenceRuntimeManager:
                     urllib.request.urlretrieve(VOICES_URL, str(voices_path))
 
                 # Check ONNX providers
+                def is_cudnn_available() -> bool:
+                    import os
+                    from pathlib import Path
+                    for path_dir in os.environ.get("PATH", "").split(os.pathsep):
+                        try:
+                            p = Path(path_dir)
+                            if p.exists() and p.is_dir() and list(p.glob("cudnn*.dll")):
+                                return True
+                        except Exception:
+                            continue
+                    cuda_path = os.environ.get("CUDA_PATH", "")
+                    if cuda_path:
+                        try:
+                            p = Path(cuda_path) / "bin"
+                            if p.exists() and p.is_dir() and list(p.glob("cudnn*.dll")):
+                                return True
+                        except Exception:
+                            pass
+                    return False
+
                 available_providers = ort.get_available_providers()
-                if "CUDAExecutionProvider" in available_providers:
+                if "CUDAExecutionProvider" in available_providers and is_cudnn_available():
                     providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
                     logger.info("[RUNTIME] Initializing Kokoro TTS with CUDA Execution Provider...")
-                else:
-                    providers = ["CPUExecutionProvider"]
-                    logger.info("[RUNTIME] Initializing Kokoro TTS with CPU Execution Provider...")
-
-                return Kokoro(str(model_path), str(voices_path))
+                    try:
+                        inf_sess = ort.InferenceSession(str(model_path), providers=providers)
+                        return Kokoro.from_session(inf_sess, str(voices_path))
+                    except Exception as err:
+                        logger.warning(f"[RUNTIME] Failed loading Kokoro TTS on CUDA: {err}. Falling back to CPU.")
+                
+                logger.info("[RUNTIME] Initializing Kokoro TTS with CPU Execution Provider...")
+                providers = ["CPUExecutionProvider"]
+                inf_sess = ort.InferenceSession(str(model_path), providers=providers)
+                return Kokoro.from_session(inf_sess, str(voices_path))
 
             self.kokoro_model = await asyncio.to_thread(load_kokoro)
 
@@ -111,6 +136,17 @@ class InferenceRuntimeManager:
                     logger.warning(f"[RUNTIME] Faster-Whisper warmup failed (non-fatal): {e}")
 
             await asyncio.to_thread(warmup_whisper)
+
+            # 4. Warm-up Kokoro TTS: run a dummy synthesis to pre-compile ONNX CUDA kernels
+            def warmup_kokoro():
+                try:
+                    logger.info("[RUNTIME] Warming up Kokoro TTS CUDA kernels...")
+                    self.kokoro_model.create("warmup", voice="bm_george", speed=1.0, lang="en-us")
+                    logger.info("[RUNTIME] Kokoro TTS warmup complete.")
+                except Exception as e:
+                    logger.warning(f"[RUNTIME] Kokoro warmup failed (non-fatal): {e}")
+
+            await asyncio.to_thread(warmup_kokoro)
 
             # 4. Warm-up Ollama: send a minimal dummy prompt to force model into GPU VRAM
             async def warmup_ollama():
