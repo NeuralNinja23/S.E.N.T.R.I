@@ -290,8 +290,8 @@ async def main():
     avg_ttfa = sum_ttfa / valid_ttfa_count if valid_ttfa_count > 0 else 0
     avg_total = sum_total / len(results)
     
-    # Write Markdown Metrics Report to Docs/Tests V2
-    report_path = Path("c:/Users/JARVIS/Desktop/Senitnel/Docs/Tests V2/stress_test_metrics_v5.md")
+    # Write Markdown Metrics Report to Docs/Tests V2 Regression
+    report_path = Path("c:/Users/JARVIS/Desktop/Senitnel/Docs/Tests V2 Regression/stress_test_metrics_v5.md")
     print(f"\nWriting stress test metrics file to: {report_path}")
     
     with open(report_path, "w", encoding="utf-8") as f:

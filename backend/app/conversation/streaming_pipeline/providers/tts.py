@@ -35,17 +35,19 @@ class KokoroTTSProvider(TTSProvider):
             return
 
         try:
-            # Consume Kokoro's native async create_stream generator
-            async for samples, sample_rate in kokoro.create_stream(
+            # Run the synchronous CPU/GPU-bound ONNX model execution in a background thread
+            # to prevent blocking the main event loop.
+            samples, sample_rate = await asyncio.to_thread(
+                kokoro.create,
                 text,
                 voice=self.voice_name,
                 speed=1.0,
                 lang="en-us"
-            ):
-                if len(samples) > 0:
-                    # Convert float32 array normalized to [-1.0, 1.0] to 16-bit signed PCM
-                    pcm16 = (samples * 32767.0).astype(np.int16)
-                    yield pcm16.tobytes()
+            )
+            if samples is not None and len(samples) > 0:
+                # Convert float32 array normalized to [-1.0, 1.0] to 16-bit signed PCM
+                pcm16 = (samples * 32767.0).astype(np.int16)
+                yield pcm16.tobytes()
         except Exception as e:
             logger.error(f"Kokoro stream synthesis failed for text '{text}': {e}")
             return

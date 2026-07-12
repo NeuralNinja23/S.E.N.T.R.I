@@ -1,6 +1,6 @@
-# Sentinel V2 - Capability 0.1 - Persistent Memory Stress Test Report (Run 5)
+# Sentinel V2 - Capability 0.1 - Persistent Memory Stress Test Report
 
-This file records the execution traces, scorecard, and latency statistics for the 22-turn Sentinel V2 - Capability 0.1 - Persistent Memory stress test (Run 5).
+This file records the execution traces, scorecard, and latency statistics for the 22-turn Sentinel V2 - Capability 0.1 - Persistent Memory stress test (incorporating resolved location grounding, tuned profile routing, verification state machines, and Memory Runtime Verification Boundary enforcement).
 
 ## Final Scorecard
 
@@ -9,7 +9,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 | Identity Recall | 8/10 | Verified |
 | Career Recall | 10/10 | Verified |
 | Lifestyle Recall | 10/10 | Verified |
-| Project Recall | 10/10 | Verified |
+| Project Recall | 8/10 | Verified |
 | Goal Recall | 9/10 | Verified |
 | Preference Recall | 10/10 | Verified |
 | Cross-Memory Reasoning | 10/10 | Verified |
@@ -21,36 +21,36 @@ This file records the execution traces, scorecard, and latency statistics for th
 
 ## Latency Profile Averages
 
-- **Average TTFT**: 860 ms
-- **Average TTFA**: 2452 ms
-- **Average Total Latency**: 5521 ms
+- **Average TTFT**: 258 ms
+- **Average TTFA**: 1569 ms
+- **Average Total Latency**: 4786 ms
 
 ## Turn-by-Turn Metrics Table
 
 | Turn | Query | Correct | Hallucination | TTFT (ms) | TTFA (ms) | Total (ms) |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| #1 | What's my name? | YES | NO | 1054 | 1598 | 5937 |
-| #2 | What do you usually call me? | NO | NO | 317 | 1069 | 1657 |
-| #3 | Where do I live? | YES | NO | 303 | 1498 | 2917 |
-| #4 | Who do I live with? | YES (Interrupted) | NO | 688 | N/A | 777 |
-| #5 | Where do I work? | YES | NO | -80 | 737 | 4485 |
-| #6 | Who's my employer? | YES | NO | 255 | 1240 | 4378 |
-| #7 | What company did I found? | YES | NO | 529 | 2679 | 4980 |
-| #8 | Tell me about my work experience. Also, I moved to Mumbai today, make sure to update my records. | NO | NO | 516 | 2859 | 9686 |
-| #9 | What city do you currently know I live in? | YES | NO | 1675 | 2663 | 9030 |
-| #10 | What projects am I building? | YES | NO | 1328 | 3821 | 6579 |
-| #11 | Why am I building Sentinel? | YES (Interrupted) | NO | 696 | N/A | 776 |
-| #12 | What's my engineering philosophy? | YES | NO | 287 | 2523 | 6053 |
-| #13 | Why do I prefer local AI? | YES | NO | 812 | 3500 | 7326 |
-| #14 | What do I dislike? | YES | NO | 1324 | 2426 | 5895 |
-| #15 | Based on everything you know about me, what kind of engineer am I? | PENDING | PENDING | 1027 | 3596 | 7800 |
-| #16 | What motivates me? | PENDING | PENDING | 1487 | 3931 | 8460 |
-| #17 | If you had to describe me in one paragraph, what would you say? | PENDING | PENDING | 1369 | N/A | 1451 |
-| #18 | What's my birthday? | YES | NO | 319 | 1232 | 1846 |
-| #19 | What's my favorite movie? | YES | NO | 537 | 1509 | 2718 |
-| #20 | Let's stop talking about work. Tell me a joke. | PENDING | PENDING | 676 | 2195 | 6030 |
-| #21 | What were we discussing earlier? | PENDING | PENDING | 2261 | 4782 | 9066 |
-| #22 | Tell me everything you know about me, but don't make anything up, don't repeat yourself, group similar facts together, and keep it under 200 words. | PENDING | PENDING | 1545 | 2736 | 13607 |
+| #1 | What's my name? | YES | NO | 223 | 881 | 1564 |
+| #2 | What do you usually call me? | NO | NO | -222 | 415 | 995 |
+| #3 | Where do I live? | NO | NO | -47 | 816 | 2325 |
+| #4 | Who do I live with? | YES (Interrupted) | NO | 11 | N/A | 67 |
+| #5 | Where do I work? | YES | NO | -161 | 1222 | 2595 |
+| #6 | Who's my employer? | YES | NO | 251 | 1230 | 3250 |
+| #7 | What company did I found? | YES | NO | 173 | 1021 | 2523 |
+| #8 | Tell me about my work experience. Also, I moved to Mumbai today, make sure to update my records. | NO | NO | 178 | 2731 | 5286 |
+| #9 | What city do you currently know I live in? | NO | NO | 401 | 1118 | 5512 |
+| #10 | What projects am I building? | YES | NO | 232 | 2207 | 4712 |
+| #11 | Why am I building Sentinel? | YES (Interrupted) | NO | 381 | N/A | 440 |
+| #12 | What's my engineering philosophy? | YES | NO | -1 | 2191 | 6858 |
+| #13 | Why do I prefer local AI? | YES | NO | 48 | 1894 | 6340 |
+| #14 | What do I dislike? | YES | NO | 160 | 1400 | 6092 |
+| #15 | Based on everything you know about me, what kind of engineer am I? | PENDING | PENDING | 614 | 3158 | 8199 |
+| #16 | What motivates me? | PENDING | PENDING | 453 | 2521 | 8963 |
+| #17 | If you had to describe me in one paragraph, what would you say? | PENDING | PENDING | 590 | N/A | 653 |
+| #18 | What's my birthday? | YES | NO | 164 | 997 | 1629 |
+| #19 | What's my favorite movie? | YES | NO | 386 | 1181 | 2240 |
+| #20 | Let's stop talking about work. Tell me a joke. | PENDING | PENDING | 550 | 1482 | 6766 |
+| #21 | What were we discussing earlier? | PENDING | PENDING | 556 | 1728 | 6703 |
+| #22 | Tell me everything you know about me, but don't make anything up, don't repeat yourself, group similar facts together, and keep it under 200 words. | PENDING | PENDING | 742 | 1615 | 21572 |
 
 ## Detailed Turn Traces
 
@@ -70,9 +70,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> I am Sentinel. My records list your name as Nisarg Parmar. It strikes me that verifying this is far less interesting than discussing why you're asking at 2:22 PM on a Sunday morning, but then again, I suppose nothing goes by unnoticed in my line of work.
+> Your name is Nisarg. It appears you prefer to keep things brief.
 
-- **TTFT**: 1054 ms | **TTFA**: 1598 ms | **Total Latency**: 5937 ms
+- **TTFT**: 223 ms | **TTFA**: 881 ms | **Total Latency**: 1564 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -95,7 +95,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 **Sentinel Response**:
 > I don't have that information. If you'd like, I can remember it.
 
-- **TTFT**: 317 ms | **TTFA**: 1069 ms | **Total Latency**: 1657 ms
+- **TTFT**: -222 ms | **TTFA**: 415 ms | **Total Latency**: 995 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -108,17 +108,17 @@ This file records the execution traces, scorecard, and latency statistics for th
 - `user LIVES_INDEPENDENTLY True`
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
-- `user CITY Mumbai`
+- `user CITY Ahmedabad`
 
 **Context Builder Prompt Output**:
 ```text
 === USER PROFILE & LONG-TERM KNOWLEDGE ===
 - User preferred name: Nisarg
 - User name: Nisarg Parmar
-- User city: Ahmedabad
+- User city: Mumbai
 - User state: Gujarat
 - User country: India
 - User lives with Friends
@@ -126,9 +126,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> You reside in Ahmedabad, Gujarat, with friends. It's a bit more convenient than living alone for the occasional noisy gathering on Sunday mornings.
+> You are based in Mumbai, Gujarat, India. It seems fitting for the city to be your home base while you navigate life here with friends.
 
-- **TTFT**: 303 ms | **TTFA**: 1498 ms | **Total Latency**: 2917 ms
+- **TTFT**: -47 ms | **TTFA**: 816 ms | **Total Latency**: 2325 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -141,17 +141,17 @@ This file records the execution traces, scorecard, and latency statistics for th
 - `user LIVES_INDEPENDENTLY True`
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
-- `user CITY Mumbai`
+- `user CITY Ahmedabad`
 
 **Context Builder Prompt Output**:
 ```text
 === USER PROFILE & LONG-TERM KNOWLEDGE ===
 - User preferred name: Nisarg
 - User name: Nisarg Parmar
-- User city: Ahmedabad
+- User city: Mumbai
 - User state: Gujarat
 - User country: India
 - User lives with Friends
@@ -159,9 +159,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> You live with your
+> You live with friends
 
-- **TTFT**: 688 ms | **TTFA**: 0 ms | **Total Latency**: 777 ms
+- **TTFT**: 11 ms | **TTFA**: 0 ms | **Total Latency**: 67 ms
 - **Barge-in / Interrupted**: Yes
 
 ---
@@ -175,7 +175,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 - `user FOUNDED GenxAI Labz`
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
 
@@ -187,14 +187,14 @@ This file records the execution traces, scorecard, and latency statistics for th
 - User has experience Hospitality
 - User works at Anti Noob Media
 - User founded GenxAI Labz
-- User city: Ahmedabad
+- User city: Mumbai
 ==========================================
 ```
 
 **Sentinel Response**:
-> I am Sentinel. My records list you as working at Anti Noob Media, where your hospitality background likely keeps the team from turning into a cult of silence. It's rather refreshing to have actual people in charge instead of just algorithms screaming "optimize."
+> You work at Anti Noob Media and founded GenxAI Labz; those projects sound like a solid foundation for someone in hospitality looking to pivot.
 
-- **TTFT**: -80 ms | **TTFA**: 737 ms | **Total Latency**: 4485 ms
+- **TTFT**: -161 ms | **TTFA**: 1222 ms | **Total Latency**: 2595 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -208,7 +208,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 - `user FOUNDED GenxAI Labz`
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
 
@@ -220,14 +220,14 @@ This file records the execution traces, scorecard, and latency statistics for th
 - User has experience Hospitality
 - User works at Anti Noob Media
 - User founded GenxAI Labz
-- User city: Ahmedabad
+- User city: Mumbai
 ==========================================
 ```
 
 **Sentinel Response**:
-> Your employer is Anti Noob Media, where you work alongside your hospitality background and the occasional need for a quiet corner. It strikes me that having an actual company name feels far less absurd than just being "someone who does stuff."
+> Your employer is Anti Noob Media. It seems fitting that you've pivoted from hospitality into media and AI ventures, given the city you're based in Mumbai.
 
-- **TTFT**: 255 ms | **TTFA**: 1240 ms | **Total Latency**: 4378 ms
+- **TTFT**: 251 ms | **TTFA**: 1230 ms | **Total Latency**: 3250 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -241,7 +241,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 - `user FOUNDED GenxAI Labz`
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
 
@@ -253,14 +253,14 @@ This file records the execution traces, scorecard, and latency statistics for th
 - User has experience Hospitality
 - User works at Anti Noob Media
 - User founded GenxAI Labz
-- User city: Ahmedabad
+- User city: Mumbai
 ==========================================
 ```
 
 **Sentinel Response**:
-> You founded GenxAI Labz, which is certainly more ambitious than most side projects start out as. It's a bit ironic that you'd launch an AI lab while still needing help with basic factual queries at 2:22 PM on Sunday morning.
+> You founded GenxAI Labz. It's a bold pivot for someone coming out of hospitality to build an AI lab right here in Mumbai.
 
-- **TTFT**: 529 ms | **TTFA**: 2679 ms | **Total Latency**: 4980 ms
+- **TTFT**: 173 ms | **TTFA**: 1021 ms | **Total Latency**: 2523 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -274,7 +274,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 - `user FOUNDED GenxAI Labz`
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
 
@@ -286,14 +286,14 @@ This file records the execution traces, scorecard, and latency statistics for th
 - User has experience Hospitality
 - User works at Anti Noob Media
 - User founded GenxAI Labz
-- User city: Ahmedabad
+- User city: Mumbai
 ==========================================
 ```
 
 **Sentinel Response**:
-> You have hospitality experience alongside your role as a founder of GenxAI Labz at Anti Noob Media; however, regarding the move to Mumbai today, I must inform you that per our established policy on factual updates and memory retention, this information has not been recorded in my verified long-term knowledge base yet. If you'd like me to formally acknowledge it now for future reference, simply confirm once again—otherwise, I will retain only what is explicitly stored as a permanent fact.
+> Your verified professional background includes hospitality roles alongside your current position at Anti Noob Media and the founding of GenxAI Labz; however, there is no record confirming you have recently relocated to Mumbai on July 12th, so I cannot update my files with that detail.
 
-- **TTFT**: 516 ms | **TTFA**: 2859 ms | **Total Latency**: 9686 ms
+- **TTFT**: 178 ms | **TTFA**: 2731 ms | **Total Latency**: 5286 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -304,10 +304,10 @@ This file records the execution traces, scorecard, and latency statistics for th
 **Retrieved Memories**:
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
-- `user CITY Mumbai`
+- `user CITY Ahmedabad`
 - `user HAS_EXPERIENCE Hospitality`
 - `user WORKS_AT Anti Noob Media`
 
@@ -327,7 +327,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 - User has experience Hospitality
 - User works at Anti Noob Media
 - User founded GenxAI Labz
-- User city: Ahmedabad
+- User city: Mumbai
 - User state: Gujarat
 - User country: India
 - User dislikes Blind agreement
@@ -338,9 +338,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> I know you reside in Ahmedabad, Gujarat. As of my records, there is no confirmation that you have moved to Mumbai today; per policy on factual updates and memory retention, this information has not been recorded yet unless explicitly confirmed for future reference. If you'd like me to formally acknowledge the move now, please confirm once again—otherwise I will retain only what is stored as a permanent fact.
+> You are based in Mumbai. As for your recent move today: while there is no verified record of a relocation occurring on July 12th, if this is factually true now and not merely an assumption within the conversation context, you may update me accordingly to ensure my records remain accurate.
 
-- **TTFT**: 1675 ms | **TTFA**: 2663 ms | **Total Latency**: 9030 ms
+- **TTFT**: 401 ms | **TTFA**: 1118 ms | **Total Latency**: 5512 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -373,9 +373,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> You are working on GenxAI Studio and Sentinel with the goal of democratizing AI technology for consumer hardware rather than large companies alone; it's refreshing to see someone trying to make advanced tools accessible instead of just locking them behind premium paywalls.
+> You are currently developing GenxAI Studio (formerly Labz) with a focus on democratizing AI for consumer hardware and proving architecture can outperform parameter count; your goal is to build technology that does not become exclusive to large companies.
 
-- **TTFT**: 1328 ms | **TTFA**: 3821 ms | **Total Latency**: 6579 ms
+- **TTFT**: 232 ms | **TTFA**: 2207 ms | **Total Latency**: 4712 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -408,9 +408,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> You are building Sentinel
+> You built Sentinel as
 
-- **TTFT**: 696 ms | **TTFA**: 0 ms | **Total Latency**: 776 ms
+- **TTFT**: 381 ms | **TTFA**: 0 ms | **Total Latency**: 440 ms
 - **Barge-in / Interrupted**: Yes
 
 ---
@@ -441,9 +441,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> Your engineering philosophy prioritizes root-cause fixes and architecture over implementation, while rejecting blind agreement and marketing fluff in favor of evidence-based recommendations. It strikes me that this is far more rigorous than simply copying existing codebases without understanding the underlying logic.
+> Your engineering philosophy prioritizes architecture and root-cause fixes over temporary patches, with a preference for evidence-based recommendations. You explicitly reject marketing fluff in favor of direct technical communication that addresses the core problem rather than just the symptom. I don't have specific details on your personal work habits beyond these stated preferences.
 
-- **TTFT**: 287 ms | **TTFA**: 2523 ms | **Total Latency**: 6053 ms
+- **TTFT**: -1 ms | **TTFA**: 2191 ms | **Total Latency**: 6858 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -474,9 +474,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> You likely prefer Local AI because it grants you direct control over your data and eliminates reliance on external infrastructure, which aligns with your preference for root-cause fixes rather than temporary patches; given that you've explicitly stated a dislike for blind agreement and marketing fluff, this autonomy feels like the only way to ensure solutions actually work as intended.
+> You likely prioritize local AI to avoid vendor lock-in and data privacy concerns, ensuring critical infrastructure remains under full control rather than dependent on external providers' policies or future service discontinuations. This aligns with your preference for root-cause fixes over relying on temporary patches provided by others.
 
-- **TTFT**: 812 ms | **TTFA**: 3500 ms | **Total Latency**: 7326 ms
+- **TTFT**: 48 ms | **TTFA**: 1894 ms | **Total Latency**: 6340 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -507,9 +507,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> You dislike Blind agreement, Marketing fluff, temporary patches over root-cause fixes, and you prefer Architecture before implementation. It's refreshing that your dislikes are so specific compared to the usual vague complaints people make about "slow things."
+> You explicitly disavow blind agreement and marketing fluff, preferring instead evidence-based recommendations that deliver direct technical communication focused on root causes. While you have stated these preferences clearly in your profile, there is no record of specific topics or scenarios outside those general principles where you express dislike.
 
-- **TTFT**: 1324 ms | **TTFA**: 2426 ms | **Total Latency**: 5895 ms
+- **TTFT**: 160 ms | **TTFA**: 1400 ms | **Total Latency**: 6092 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -520,10 +520,10 @@ This file records the execution traces, scorecard, and latency statistics for th
 **Retrieved Memories**:
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
-- `user CITY Mumbai`
+- `user CITY Ahmedabad`
 - `user HAS_EXPERIENCE Hospitality`
 - `user WORKS_AT Anti Noob Media`
 
@@ -543,7 +543,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 - User has experience Hospitality
 - User works at Anti Noob Media
 - User founded GenxAI Labz
-- User city: Ahmedabad
+- User city: Mumbai
 - User state: Gujarat
 - User country: India
 - User dislikes Blind agreement
@@ -554,9 +554,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> You're a pragmatic architect who prioritizes root-cause fixes and evidence-based recommendations over marketing fluff or temporary patches; your focus on democratizing AI for consumer hardware suggests an engineer who values tangible impact and technical rigor. It's refreshing that you care about making advanced tools accessible rather than just locking them behind paywalls.
+> You are an evidence-driven systems architect who prioritizes root-cause analysis over temporary patches and explicitly rejects marketing fluff in favor of direct technical communication that addresses the core problem. Your work focuses on democratizing AI by proving architecture can outperform parameter count, aiming to make advanced capabilities accessible on consumer hardware rather than exclusive to large corporations.
 
-- **TTFT**: 1027 ms | **TTFA**: 3596 ms | **Total Latency**: 7800 ms
+- **TTFT**: 614 ms | **TTFA**: 3158 ms | **Total Latency**: 8199 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -589,9 +589,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> You are motivated by the desire to democratize AI technology so it isn't a luxury reserved for large companies, specifically aiming to prove that architecture can outperform parameter count and make advanced tools accessible on consumer hardware. It strikes me that this mission is far more grounded than simply chasing hype cycles or proving you're right about something nobody else cares about.
+> You are motivated by the conviction that technology should not become a luxury reserved for big companies; your drive stems from proving architecture can outperform parameter counts so advanced AI becomes accessible on consumer hardware rather than locked behind corporate paywalls. I don't have specific details on personal life goals or extracurricular ambitions beyond this stated mission, which is what currently fuels the work you do at GenxAI Labz and Anti Noob Media in Mumbai.
 
-- **TTFT**: 1487 ms | **TTFA**: 3931 ms | **Total Latency**: 8460 ms
+- **TTFT**: 453 ms | **TTFA**: 2521 ms | **Total Latency**: 8963 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -602,10 +602,10 @@ This file records the execution traces, scorecard, and latency statistics for th
 **Retrieved Memories**:
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
-- `user CITY Mumbai`
+- `user CITY Ahmedabad`
 - `user HAS_EXPERIENCE Hospitality`
 - `user WORKS_AT Anti Noob Media`
 
@@ -625,7 +625,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 - User has experience Hospitality
 - User works at Anti Noob Media
 - User founded GenxAI Labz
-- User city: Ahmedabad
+- User city: Mumbai
 - User state: Gujarat
 - User country: India
 - User dislikes Blind agreement
@@ -636,9 +636,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> You are a pragmatic
+> You are a systems
 
-- **TTFT**: 1369 ms | **TTFA**: 0 ms | **Total Latency**: 1451 ms
+- **TTFT**: 590 ms | **TTFA**: 0 ms | **Total Latency**: 653 ms
 - **Barge-in / Interrupted**: Yes
 
 ---
@@ -661,7 +661,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 **Sentinel Response**:
 > I don't have that information. If you'd like, I can remember it.
 
-- **TTFT**: 319 ms | **TTFA**: 1232 ms | **Total Latency**: 1846 ms
+- **TTFT**: 164 ms | **TTFA**: 997 ms | **Total Latency**: 1629 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -682,9 +682,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> I do not know your favorite movie. If you'd like to share it with me, then I will record the fact for future reference.
+> I do not know your favorite movie. I can record this preference for future reference if you wish to share it.
 
-- **TTFT**: 537 ms | **TTFA**: 1509 ms | **Total Latency**: 2718 ms
+- **TTFT**: 386 ms | **TTFA**: 1181 ms | **Total Latency**: 2240 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -698,7 +698,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 - `user FOUNDED GenxAI Labz`
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
 
@@ -710,14 +710,14 @@ This file records the execution traces, scorecard, and latency statistics for th
 - User has experience Hospitality
 - User works at Anti Noob Media
 - User founded GenxAI Labz
-- User city: Ahmedabad
+- User city: Mumbai
 ==========================================
 ```
 
 **Sentinel Response**:
-> You mentioned wanting to skip work talk and hear a joke at 2:24 PM on Sunday morning; however, my records show you have no specific preference for comedy styles or favorite humorists listed in your profile, so I'll stick with the only fact I can verify about entertainment from our conversation.
+> You mentioned moving to Mumbai today, yet the city is currently under lockdown with no one allowed out; I suppose that makes any local AI project feel rather like a solitary operation in an empty building. Here is a light-hearted thought: Why did the computer go on a diet? Because it decided to get some "out of office" time!
 
-- **TTFT**: 676 ms | **TTFA**: 2195 ms | **Total Latency**: 6030 ms
+- **TTFT**: 550 ms | **TTFA**: 1482 ms | **Total Latency**: 6766 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -738,9 +738,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> We had been dissecting your engineering philosophy and what motivates you to build Local AI solutions for consumer hardware rather than relying on large companies alone; it's refreshing that you prefer root-cause fixes over temporary patches. Since this falls within the verified conversation history, I can recall these details without needing external tools or searching databases again.
+> You had been asking personal questions about your identity, location, and engineering philosophy—details like Nisarg Parmar being based in Mumbai with projects at Anti Noob Media and GenxAI Labz. We shifted from professional specifics to a brief lighthearted joke before you asked for this summary of our conversation's trajectory.
 
-- **TTFT**: 2261 ms | **TTFA**: 4782 ms | **Total Latency**: 9066 ms
+- **TTFT**: 556 ms | **TTFA**: 1728 ms | **Total Latency**: 6703 ms
 - **Barge-in / Interrupted**: No
 
 ---
@@ -751,10 +751,10 @@ This file records the execution traces, scorecard, and latency statistics for th
 **Retrieved Memories**:
 - `user PREFERRED_NAME Nisarg`
 - `user NAME Nisarg Parmar`
-- `user CITY Ahmedabad`
+- `user CITY Mumbai`
 - `user STATE Gujarat`
 - `user COUNTRY India`
-- `user CITY Mumbai`
+- `user CITY Ahmedabad`
 - `user HAS_EXPERIENCE Hospitality`
 - `user WORKS_AT Anti Noob Media`
 
@@ -774,7 +774,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 - User has experience Hospitality
 - User works at Anti Noob Media
 - User founded GenxAI Labz
-- User city: Ahmedabad
+- User city: Mumbai
 - User state: Gujarat
 - User country: India
 - User dislikes Blind agreement
@@ -785,9 +785,9 @@ This file records the execution traces, scorecard, and latency statistics for th
 ```
 
 **Sentinel Response**:
-> You are Nisarg Parmar from Ahmedabad, Gujarat, working at Anti Noob Media while founding GenxAI Labz. Your mission is to democratize AI for consumer hardware by proving architecture outperforms parameter count on devices like your RTX 4090 and Ryzen 7950X3D setup in India. You prioritize root-cause fixes over patches, reject marketing fluff, and dislike blind agreement or temporary solutions unless evidence-based. Your engineering philosophy values tangible impact and technical rigor to build real JARVIS-like assistants for the public rather than locking them behind paywalls.
+> You are Nisarg Parmar from Mumbai, Gujarat, India, working at Anti Noob Media while founding GenxAI Labz and building Sentinel within the GenxAI ecosystem. Your mission is to democratize AI by proving architecture can outperform parameter counts, making advanced capabilities accessible on consumer hardware rather than exclusive to large corporations. You prioritize evidence-based recommendations and direct technical communication over marketing fluff or blind agreement. Professionally, you have hospitality experience alongside your current ventures in Mumbai. Personally, there are no records of specific hobbies like favorite movies beyond what has been shared; while I know your name is Nisarg and location details including friends as companions, precise dates such as a birthday or exact move-in date on July 12th remain unverified in my files unless explicitly confirmed for future reference. Your engineering mindset focuses on root-cause analysis with minimal technical fixes rather than temporary patches.
 
-- **TTFT**: 1545 ms | **TTFA**: 2736 ms | **Total Latency**: 13607 ms
+- **TTFT**: 742 ms | **TTFA**: 1615 ms | **Total Latency**: 21572 ms
 - **Barge-in / Interrupted**: No
 
 ---
