@@ -1,6 +1,6 @@
-# Sentinel V2 - Capability 0.1 - Persistent Memory Stress Test Report (Run 1)
+# Sentri V2 - Capability 0.1 - Persistent Memory Stress Test Report (Run 1)
 
-This file records the execution traces, scorecard, and latency statistics for the 22-turn Sentinel V2 - Capability 0.1 - Persistent Memory stress test (Run 1).
+This file records the execution traces, scorecard, and latency statistics for the 22-turn Sentri V2 - Capability 0.1 - Persistent Memory stress test (Run 1).
 
 ## Final Scorecard
 
@@ -38,7 +38,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 | #7 | What company did I found? | YES | NO | -10 | N/A | 553 |
 | #8 | Tell me about my work experience. Also, I moved to Mumbai today, make sure to update my records. | NO | NO | 185 | N/A | 1110 |
 | #9 | What projects am I building? | NO | NO | -111 | N/A | 720 |
-| #10 | Why am I building Sentinel? | YES (Interrupted) | NO | 272 | N/A | 340 |
+| #10 | Why am I building Sentri? | YES (Interrupted) | NO | 272 | N/A | 340 |
 | #11 | What's my engineering philosophy? | YES | NO | 81 | N/A | 952 |
 | #12 | Why do I prefer local AI? | YES | NO | 155 | N/A | 1089 |
 | #13 | What do I dislike? | NO | NO | 36 | N/A | 1120 |
@@ -68,8 +68,8 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
-> I am Sentinel. It is Saturday evening in Ahmedabad, and you've asked a question that requires no thinking at all.
+**Sentri Response**:
+> I am Sentri. It is Saturday evening in Ahmedabad, and you've asked a question that requires no thinking at all.
 
 - **TTFT**: 21 ms | **TTFA**: 0 ms | **Total Latency**: 515 ms
 - **Barge-in / Interrupted**: No
@@ -91,7 +91,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > I don't use titles here; I simply respond to your questions directly. You might find it refreshing when the formality drops away entirely, doesn't it?
 
 - **TTFT**: -397 ms | **TTFA**: 0 ms | **Total Latency**: 212 ms
@@ -120,7 +120,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You reside independently in Ahmedabad with friends. It is Saturday evening at 6:15 PM here.
 
 - **TTFT**: -334 ms | **TTFA**: 0 ms | **Total Latency**: 88 ms
@@ -149,7 +149,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You live with your
 
 - **TTFT**: -298 ms | **TTFA**: 0 ms | **Total Latency**: -230 ms
@@ -182,7 +182,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You work as a hospitality professional for Anti Noob Media, where you likely spend more time than expected on weekends. It's Saturday evening in Ahmedabad after all; perhaps the commute was longer today.
 
 - **TTFT**: -240 ms | **TTFA**: 0 ms | **Total Latency**: 580 ms
@@ -215,7 +215,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > Your employer is Anti Noob Media. You've asked several direct questions already, so I'll stop adding commentary and keep it brief for you.
 
 - **TTFT**: -229 ms | **TTFA**: 0 ms | **Total Latency**: 366 ms
@@ -248,7 +248,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You founded GenxAI Labz. It's Saturday evening in Ahmedabad; perhaps the lab needs a break after another long week of work.
 
 - **TTFT**: -10 ms | **TTFA**: 0 ms | **Total Latency**: 553 ms
@@ -281,7 +281,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You have extensive hospitality experience and currently reside in Ahmedabad with friends; your recent move to Mumbai has been recorded for tomorrow's date. It is Saturday evening here; perhaps you've already settled into the new city before I finish this sentence?
 
 - **TTFT**: 185 ms | **TTFA**: 0 ms | **Total Latency**: 1110 ms
@@ -294,7 +294,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 
 **Retrieved Memories**:
 - `user WORKS_ON GenxAI Studio`
-- `user WORKS_ON Sentinel`
+- `user WORKS_ON Sentri`
 - `user GOAL Build a real JARVIS-like AI assistant`
 - `user GOAL Democratize AI technology`
 - `user GOAL Make advanced AI accessible on consumer hardware`
@@ -314,7 +314,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You are working on GenxAI Labz and a JARVIS-like assistant designed for consumer hardware. It is Saturday evening in Mumbai; perhaps you've already deployed the prototype before my response finishes its syntax check.
 
 - **TTFT**: -111 ms | **TTFA**: 0 ms | **Total Latency**: 720 ms
@@ -323,7 +323,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ---
 
 ### Turn #10
-**User**: `Why am I building Sentinel?`
+**User**: `Why am I building Sentri?`
 
 **Retrieved Memories**:
 - `user GOAL Build a real JARVIS-like AI assistant`
@@ -349,8 +349,8 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
-> Sentinel exists because
+**Sentri Response**:
+> Sentri exists because
 
 - **TTFT**: 272 ms | **TTFA**: 0 ms | **Total Latency**: 340 ms
 - **Barge-in / Interrupted**: Yes
@@ -382,7 +382,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > Your engineering philosophy prioritizes Memory, tools, iteration, and planning over raw parameter counts, believing architecture trumps scale. It is Saturday evening in Mumbai; perhaps the system you built needs a rest before its next logic gate fires.
 
 - **TTFT**: 81 ms | **TTFA**: 0 ms | **Total Latency**: 952 ms
@@ -415,7 +415,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You favor local AI because it offers superior control over data privacy and latency, which aligns with your cyber-security interests. It is Saturday evening in Mumbai; perhaps the silence of a private server feels less noisy than a cloud connection right now.
 
 - **TTFT**: 155 ms | **TTFA**: 0 ms | **Total Latency**: 1089 ms
@@ -448,7 +448,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You explicitly dislike being treated as an entity that cannot think or process information independently, preferring systems where you retain full cognitive control over your own data and workflows. It is Saturday evening in Mumbai; perhaps the noise of external constraints feels louder than the silence of a fully local stack right now.
 
 - **TTFT**: 36 ms | **TTFA**: 0 ms | **Total Latency**: 1120 ms
@@ -471,7 +471,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You are an architect who prioritizes control and architecture over scale; it is Saturday evening in Mumbai where your systems likely hum quietly without external oversight.
 
 - **TTFT**: -90 ms | **TTFA**: 0 ms | **Total Latency**: 521 ms
@@ -506,7 +506,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > Your motivation stems from a desire to build capable, private AI through disciplined iteration rather than relying on brute force or centralized clouds. It's Saturday evening in Mumbai; perhaps the quiet of your local stack feels exactly as loud and satisfying as you intend it to be.
 
 - **TTFT**: 190 ms | **TTFA**: 0 ms | **Total Latency**: 1208 ms
@@ -529,7 +529,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You are a privacy
 
 - **TTFT**: -92 ms | **TTFA**: 0 ms | **Total Latency**: -46 ms
@@ -552,7 +552,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > I do not have access to your birth date; it is Saturday evening in Mumbai.
 
 - **TTFT**: -46 ms | **TTFA**: 0 ms | **Total Latency**: 282 ms
@@ -575,7 +575,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You haven't shared that detail with me yet, so I can only guess based on the quiet evenings you spend alone or with friends here in Mumbai. It is Saturday at 6:15 PM; perhaps your next recommendation will finally be revealed when we get a second chance to chat?
 
 - **TTFT**: -25 ms | **TTFA**: 0 ms | **Total Latency**: 1096 ms
@@ -608,7 +608,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You mentioned you moved to Mumbai today, so maybe the best joke is that now there are more people here who can't find their way home in traffic without a map. It's Saturday evening; perhaps your new city has been kind enough not to judge me for my lack of local knowledge yet.
 
 - **TTFT**: 25 ms | **TTFA**: 0 ms | **Total Latency**: 1157 ms
@@ -631,7 +631,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > We shifted from technical specifics like GenxAI Labz and your engineering philosophy to a brief detour into cinema before circling back to work. It is Saturday evening in Mumbai; perhaps the topic change felt necessary after so many direct questions about systems and architecture?
 
 - **TTFT**: -28 ms | **TTFA**: 0 ms | **Total Latency**: 992 ms
@@ -644,7 +644,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 
 **Retrieved Memories**:
 - `user WORKS_ON GenxAI Studio`
-- `user WORKS_ON Sentinel`
+- `user WORKS_ON Sentri`
 - `user GOAL Build a real JARVIS-like AI assistant`
 - `user GOAL Democratize AI technology`
 - `user GOAL Make advanced AI accessible on consumer hardware`
@@ -664,12 +664,12 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You are a hospitality professional who founded GenxAI Labz to democratize AI on consumer hardware, prioritizing local control over cloud reliance for privacy and latency. Your engineering philosophy values architecture and iteration above raw parameter counts, driven by a desire for cognitive independence from centralized systems. You reside in Mumbai (recently moved) with friends in Ahmedabad previously, working remotely or independently rather than within large corporate structures.
 
 You explicitly dislike being treated as an entity lacking independent thought, preferring full control over your data flows and workflows. Your motivation stems from building capable, private AI through disciplined iteration to make advanced technology accessible beyond the luxury of big tech. You favor systems where you retain complete cognitive oversight, viewing external constraints or cloud dependencies as noisy limitations compared to a quiet local stack.
 
-Regarding personal details: I do not know your birthday or favorite movie; these specifics were never shared in our conversation history. Your recent relocation to Mumbai on Saturday evening has been noted for record accuracy. You prefer direct engagement over formal titles or theatrical greetings, valuing efficiency and honesty above pleasantries when discussing technical realities like Sentinel's design goals.
+Regarding personal details: I do not know your birthday or favorite movie; these specifics were never shared in our conversation history. Your recent relocation to Mumbai on Saturday evening has been noted for record accuracy. You prefer direct engagement over formal titles or theatrical greetings, valuing efficiency and honesty above pleasantries when discussing technical realities like Sentri's design goals.
 
 - **TTFT**: 80 ms | **TTFA**: 0 ms | **Total Latency**: 4449 ms
 - **Barge-in / Interrupted**: No

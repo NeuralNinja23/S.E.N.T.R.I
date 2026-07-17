@@ -10,7 +10,7 @@ class VoiceService {
     if (typeof window === "undefined") return;
 
     // Add startup log on client initialization
-    voiceStore.addLog("SENTINEL Online");
+    voiceStore.addLog("SENTRI Online");
 
     // Connect WebSocket
     websocketService.connect(
@@ -41,7 +41,7 @@ class VoiceService {
         if (msg.type === "system") {
           voiceStore.addLog(`SYS: ${msg.message}`);
         } else if (msg.type === "text") {
-          voiceStore.addLog(`SENTINEL: ${msg.data}`);
+          voiceStore.addLog(`SENTRI: ${msg.data}`);
           if (!audioService.isPlaying()) {
             voiceStore.setState({ speakingState: "THINKING" });
           }
@@ -54,14 +54,14 @@ class VoiceService {
         } else if (msg.type === "state") {
           if (msg.state === "STANDBY") {
             voiceStore.setState({ speakingState: "STANDBY" });
-            voiceStore.addLog("SYS: Sentinel entered standby mode.");
+            voiceStore.addLog("SYS: SENTRI entered standby mode.");
             audioService.stopAllAudio();
           } else if (msg.state === "WAKING") {
             voiceStore.setState({ speakingState: "WAKING" });
-            voiceStore.addLog("SYS: Sentinel is waking up...");
+            voiceStore.addLog("SYS: SENTRI is waking up...");
           } else if (msg.state === "READY") {
             voiceStore.setState({ speakingState: "INACTIVE" });
-            voiceStore.addLog("SYS: Sentinel is active and ready.");
+            voiceStore.addLog("SYS: SENTRI is active and ready.");
           } else if (msg.state === "THINKING") {
             if (!audioService.isPlaying()) {
               voiceStore.setState({ speakingState: "THINKING" });
@@ -149,7 +149,7 @@ class VoiceService {
           }
         },
         () => {
-          // VAD detected start of speech — trigger interruption if Sentinel is speaking
+          // VAD detected start of speech — trigger interruption if Sentri is speaking
           if (audioService.isPlaying()) {
             console.log("[VoiceService] Interruption detected! Stopping playback.");
             audioService.stopAllAudio();

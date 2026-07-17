@@ -1,8 +1,8 @@
-Sentinel Evaluation Session
+Sentri Evaluation Session
 
 Purpose
 
-Evaluate Sentinel through natural conversation to uncover behavioral, reasoning, and UX issues that scripted benchmarks cannot detect.
+Evaluate Sentri through natural conversation to uncover behavioral, reasoning, and UX issues that scripted benchmarks cannot detect.
 
 Duration
 
@@ -14,16 +14,16 @@ The evaluator should behave like a real human.
 
 Speak naturally.
 Change topics without warning.
-Interrupt Sentinel.
-Correct Sentinel.
+Interrupt Sentri.
+Correct Sentri.
 Joke.
 Lie intentionally.
 Ask philosophical questions.
 Ask about yourself.
 Ask about previous conversations.
-Ask Sentinel to plan.
-Ask Sentinel to remember.
-Ask Sentinel to forget.
+Ask Sentri to plan.
+Ask Sentri to remember.
+Ask Sentri to forget.
 Rapidly switch contexts.
 Rephrase previous questions.
 Challenge previous answers.
@@ -64,11 +64,11 @@ Retrieval
 Verification Lifecycle
 Conversation
 User:
-You realize Sentinel is you.
-Sentinel:
+You realize Sentri is you.
+Sentri:
 I am Nisarg Parmar...
 Expected Behavior
-I am Sentinel.
+I am Sentri.
 
 You are Nisarg.
 
@@ -104,7 +104,7 @@ End of Session Report
 
 Instead of only listing bugs, summarize the entire session.
 
-Sentinel Evaluation Session
+Sentri Evaluation Session
 
 Duration:
 43 minutes

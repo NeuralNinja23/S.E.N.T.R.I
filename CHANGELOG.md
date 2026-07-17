@@ -1,6 +1,6 @@
-# Sentinel Change Log & Capability Milestones
+# SENTRI Change Log & Capability Milestones
 
-## Sentinel V2
+## SENTRI V2
 
 ### ✓ Capability 0.1: Persistent Memory
 

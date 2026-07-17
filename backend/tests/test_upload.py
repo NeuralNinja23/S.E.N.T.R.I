@@ -22,7 +22,7 @@ async def test_upload_txt():
     await clear_documents()
     assert len(uploaded_documents) == 0
     
-    file_content = "This is a test text document for Sentinel local context."
+    file_content = "This is a test text document for Sentri local context."
     file_bytes = file_content.encode("utf-8")
     
     # Construct UploadFile
@@ -38,7 +38,7 @@ async def test_upload_txt():
 
 async def test_upload_md():
     print("\n--- Testing MD File Upload ---")
-    file_content = "# Sentinel Test\nThis is a markdown test file."
+    file_content = "# Sentri Test\nThis is a markdown test file."
     file_bytes = file_content.encode("utf-8")
     
     upload_file = UploadFile(filename="notes.md", file=io.BytesIO(file_bytes))
@@ -52,7 +52,7 @@ async def test_upload_md():
 async def test_upload_docx():
     print("\n--- Testing DOCX File Upload ---")
     doc = docx.Document()
-    doc.add_paragraph("Sentinel DOCX text extractor test snippet.")
+    doc.add_paragraph("Sentri DOCX text extractor test snippet.")
     docx_buf = io.BytesIO()
     doc.save(docx_buf)
     docx_bytes = docx_buf.getvalue()
@@ -63,7 +63,7 @@ async def test_upload_docx():
     assert len(res) == 3
     assert any(doc.filename == "doc_test.docx" for doc in res)
     docx_doc = next(d for d in uploaded_documents if d["filename"] == "doc_test.docx")
-    assert "Sentinel DOCX text extractor" in docx_doc["content"]
+    assert "Sentri DOCX text extractor" in docx_doc["content"]
     print("DOCX upload test passed!")
 
 async def test_upload_image_rejected():
@@ -100,7 +100,7 @@ async def test_list_and_delete_and_context():
     assert "=== DOCUMENT: test_doc.txt ===" in context
     assert "This is a test text document" in context
     assert "=== DOCUMENT: doc_test.docx ===" in context
-    assert "Sentinel DOCX text extractor" in context
+    assert "Sentri DOCX text extractor" in context
     
     # Delete notes.md
     res = await delete_document("notes.md")
@@ -115,13 +115,13 @@ async def test_list_and_delete_and_context():
     print("List, delete, context and clear tests passed!")
 
 async def main():
-    print("Running Sentinel Upload API tests...")
+    print("Running Sentri Upload API tests...")
     await test_upload_txt()
     await test_upload_md()
     await test_upload_docx()
     await test_upload_image_rejected()
     await test_list_and_delete_and_context()
-    print("\nAll Sentinel Upload API tests PASSED!")
+    print("\nAll Sentri Upload API tests PASSED!")
 
 if __name__ == "__main__":
     asyncio.run(main())

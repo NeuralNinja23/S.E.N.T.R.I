@@ -5,8 +5,8 @@ from app.services.logger import get_logger
 
 logger = get_logger("fs_tools")
 
-# Sentinel Root: c:\Users\SENTINEL\Desktop\GenxAI Labz\Senitnel
-# fs_tools.py is at Senitnel/backend/app/Sentinel/tools/fs_tools.py
+# Sentri Root: c:\Users\SENTRI\Desktop\GenxAI Labz\SENTRI
+# fs_tools.py is at SENTRI/backend/app/Sentri/tools/fs_tools.py
 ROOT_DIR = Path(__file__).resolve().parents[4]
 
 def resolve_absolute_path(path_str: str) -> Path | None:

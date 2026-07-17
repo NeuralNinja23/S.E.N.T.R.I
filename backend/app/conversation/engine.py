@@ -6,7 +6,7 @@ from app.config import CONVERSATION_ENGINE
 
 class ConversationEngine:
     """
-    Core conversation engine for Sentinel V2.
+    Core conversation engine for Sentri V2.
     Routes real-time streaming audio and text turns.
     """
     

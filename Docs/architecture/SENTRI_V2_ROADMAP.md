@@ -1,15 +1,15 @@
-# Sentinel V2 — MiniOmni Migration
+# SENTRI V2 — MiniOmni Migration
 
 Status: **Active Development**  
-Base: **Sentinel V1** (tag: `v1.0-whisper-final`)
+Base: **SENTRI V1** (tag: `v1.0-whisper-final`)
 
 ---
 
 ## Primary Objective
-Replace the cascaded Whisper (ASR) $\rightarrow$ Ollama/Qwen (LLM) $\rightarrow$ Kokoro (TTS) pipeline with a **native speech-to-speech model (MiniOmni2)**, achieving ultra-low latency, native emotional expression, and voice-to-voice reasoning while preserving Sentinel's core agent capabilities:
+Replace the cascaded Whisper (ASR) $\rightarrow$ Ollama/Qwen (LLM) $\rightarrow$ Kokoro (TTS) pipeline with a **native speech-to-speech model (MiniOmni2)**, achieving ultra-low latency, native emotional expression, and voice-to-voice reasoning while preserving SENTRI's core agent capabilities:
 1. **Dynamic Tools**: Maintaining local tool execution (such as time/date checks, system controls, etc.).
 2. **Persistent Graph Memory**: Preserving the `GraphMemoryStore` (user facts, directives, and snapping snapshots).
-3. **Identity and Tone**: Preserving Sentinel's core persona ("Boss", professional but alert).
+3. **Identity and Tone**: Preserving SENTRI's core persona ("Boss", professional but alert).
 
 ---
 
@@ -17,8 +17,8 @@ Replace the cascaded Whisper (ASR) $\rightarrow$ Ollama/Qwen (LLM) $\rightarrow$
 
 ```mermaid
 graph TD
-    %% Sentinel V1 Cascaded Architecture
-    subgraph V1 ["Sentinel V1 (Cascaded Pipeline)"]
+    %% SENTRI V1 Cascaded Architecture
+    subgraph V1 ["SENTRI V1 (Cascaded Pipeline)"]
         A[User Audio Stream] -->|WebSockets| B[Silero VAD]
         B -->|Stitch Speech Buffer| C[Faster-Whisper ASR]
         C -->|Text Query| D[Google ADK + Ollama/Qwen]
@@ -26,8 +26,8 @@ graph TD
         E -->|Audio Chunk Stream| F[Frontend Audio Queue]
     end
 
-    %% Sentinel V2 Native Audio Architecture
-    subgraph V2 ["Sentinel V2 (Native Speech-to-Speech)"]
+    %% SENTRI V2 Native Audio Architecture
+    subgraph V2 ["SENTRI V2 (Native Speech-to-Speech)"]
         G[User Audio Stream] -->|Streaming WebSockets| H[VAD / Activity Detector]
         H -->|Audio Tokens / Waveform| I[MiniOmni2 Model]
         I -->|Direct Audio Stream| J[Frontend Audio Queue]
@@ -75,4 +75,4 @@ graph TD
 
 ### Phase 4: Tools & Memory Bridge
 *   Connect the textual reasoning stream to the existing memory and control tools.
-*   Verify that S.E.N.T.I.N.E.L. can still save facts and apply system commands.
+*   Verify that S.E.N.T.R.I. can still save facts and apply system commands.

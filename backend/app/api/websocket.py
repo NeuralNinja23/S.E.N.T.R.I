@@ -2,8 +2,9 @@ import json
 import asyncio
 import time
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocketState
 
-from app.config import STANDBY_TIMEOUT_SECONDS, SENTINEL_SYSTEM_INSTRUCTION
+from app.config import STANDBY_TIMEOUT_SECONDS, SENTRI_SYSTEM_INSTRUCTION
 from app.services.logger import get_logger
 from app.runtime.runtime_state import runtime_store, RuntimeState, runtime_events
 from app.runtime.runtime_service import runtime_service
@@ -12,6 +13,20 @@ from app.conversation import ConversationEngine, ConversationSession
 from app.api.upload import get_all_documents_text_context
 
 router = APIRouter()
+
+async def safe_send_json(websocket: WebSocket, payload: dict):
+    if websocket.client_state == WebSocketState.CONNECTED:
+        try:
+            await websocket.send_json(payload)
+        except Exception:
+            pass
+
+async def safe_send_bytes(websocket: WebSocket, data: bytes):
+    if websocket.client_state == WebSocketState.CONNECTED:
+        try:
+            await websocket.send_bytes(data)
+        except Exception:
+            pass
 logger = get_logger("websocket")
 
 conversation_engine = ConversationEngine()
@@ -28,7 +43,7 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: 
     session.start_turn()
     try:
         # Set UI state to THINKING
-        await websocket.send_json({"type": "state", "state": "THINKING"})
+        await safe_send_json(websocket, {"type": "state", "state": "THINKING"})
         
         # Helper generator yielding collected speech bytes
         async def audio_generator():
@@ -49,26 +64,26 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: 
                 break
 
             if chunk.get("type") == "system" and chunk.get("status") == "conversation_engine_missing":
-                await websocket.send_json(chunk)
+                await safe_send_json(websocket, chunk)
                 break
                 
             if first_chunk:
                 # Set UI state back to READY for streaming reply
-                await websocket.send_json({"type": "state", "state": "READY"})
+                await safe_send_json(websocket, {"type": "state", "state": "READY"})
                 first_chunk = False
                 
             if chunk["type"] == "audio":
                 session.metrics.record_first_audio()
-                await websocket.send_bytes(chunk["data"])
+                await safe_send_bytes(websocket, chunk["data"])
                 await asyncio.sleep(0.005)  # Flow control
             elif chunk["type"] == "text":
                 session.metrics.record_first_token()
                 session.metrics.add_tokens(len(chunk["data"].split()))
                 accumulated_text.append(chunk["data"])
-                await websocket.send_json({"type": "text", "data": chunk["data"]})
+                await safe_send_json(websocket, {"type": "text", "data": chunk["data"]})
             elif chunk["type"] == "user_transcript":
                 session.append_user_turn(chunk["data"])
-                await websocket.send_json({"type": "user", "data": chunk["data"]})
+                await safe_send_json(websocket, {"type": "user", "data": chunk["data"]})
                 
         final_response = "".join(accumulated_text).strip()
         session.end_turn(final_text=final_response)
@@ -86,10 +101,7 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: 
         logger.error(f"Error in speech processing turn: {e}")
         session.speaking = False
     finally:
-        try:
-            await websocket.send_json({"type": "state", "state": "READY"})
-        except Exception:
-            pass
+        await safe_send_json(websocket, {"type": "state", "state": "READY"})
 
 async def process_user_text_turn(text_query: str, websocket: WebSocket, session: ConversationSession):
     """Processes text query directly, returning text reply without TTS."""
@@ -97,10 +109,50 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
     session.append_user_turn(text_query)
     try:
         # Send USER log to frontend
-        await websocket.send_json({"type": "user", "data": text_query})
+        await safe_send_json(websocket, {"type": "user", "data": text_query})
+        
+        # Check for memory erasure requests (e.g. "forget Rohan")
+        query_lower = text_query.lower().strip()
+        if any(kw in query_lower for kw in ["forget ", "forget about ", "delete ", "erase ", "remove from memory", "clear memory"]):
+            target = ""
+            for kw in ["forget about", "forget", "delete", "erase", "remove from memory", "clear memory"]:
+                if kw in query_lower:
+                    target = query_lower.split(kw)[-1].strip()
+                    break
+            
+            import string
+            target = target.strip(string.punctuation)
+            if target:
+                words = [w for w in target.split() if w not in ("about", "my", "the", "from", "your", "memory", "that", "record")]
+                if words:
+                    all_memories = memory_runtime.list_memories()
+                    deleted_count = 0
+                    for entry in all_memories:
+                        match = False
+                        for w in words:
+                            if (w in entry.category.lower() or
+                                w in entry.subject.lower() or 
+                                w in entry.predicate.lower() or 
+                                w in entry.object.lower()):
+                                match = True
+                                break
+                        if match:
+                            memory_runtime.delete(entry.id)
+                            deleted_count += 1
+                    
+                    if deleted_count > 0:
+                        response_text = "I have removed that information from this conversation. It won't be treated as part of your long-term profile unless you tell me otherwise."
+                        logger.info(f"Memory erasure executed for words {words}. Deleted {deleted_count} entries.")
+                    else:
+                        response_text = "I have removed that pending information from this conversation. It won't be treated as part of your long-term profile unless you tell me otherwise."
+                    
+                    await safe_send_json(websocket, {"type": "text", "data": response_text})
+                    await safe_send_json(websocket, {"type": "state", "state": "READY"})
+                    session.end_turn(final_text=response_text)
+                    return
         
         # Set UI state to THINKING
-        await websocket.send_json({"type": "state", "state": "THINKING"})
+        await safe_send_json(websocket, {"type": "state", "state": "THINKING"})
         
         # 1. Reasoning (Ollama LLM)
         try:
@@ -124,14 +176,14 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
             
         import os
         import datetime
-        current_dt = datetime.datetime.now().strftime("%A, %B %d, %Y, %I:%M %p")
-        time_context = f"\n\n=== TEMPORAL & ENVIRONMENT REALITY ===\n- Current Date/Time: {current_dt}\n"
+        current_dt = datetime.datetime.now().strftime("%A, %B %d, %Y")
+        time_context = f"\n\n=== TEMPORAL & ENVIRONMENT REALITY ===\n- Current Date: {current_dt}\n"
         location = os.getenv("LOCAL_LOCATION")
         if location:
             time_context += f"- Current Location: {location}\n"
         time_context += "======================================\n"
         
-        final_instruction = SENTINEL_SYSTEM_INSTRUCTION + time_context
+        final_instruction = SENTRI_SYSTEM_INSTRUCTION + time_context
         if warm_profile_block:
             final_instruction += "\n\n" + warm_profile_block
             
@@ -145,24 +197,21 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
         )
         
         if not response_text:
-            session.end_turn()
-            await websocket.send_json({"type": "state", "state": "READY"})
-            return
+            response_text = "How may I assist you?"
             
-        logger.info(f"Ollama response: {response_text}")
+        # Log response safely to console (prevent UnicodeEncodeError on Windows console)
+        safe_response_log = response_text.encode('ascii', errors='replace').decode('ascii')
+        logger.info(f"Ollama response: {safe_response_log}")
         session.end_turn(final_text=response_text)
         
-        # Log full text to frontend (retains <think> blocks for visual display)
-        await websocket.send_json({"type": "text", "data": response_text})
+        # Log text output to frontend
+        await safe_send_json(websocket, {"type": "text", "data": response_text})
         
     except Exception as e:
         logger.error(f"Error in local text processing turn: {e}")
         session.speaking = False
     finally:
-        try:
-            await websocket.send_json({"type": "state", "state": "READY"})
-        except Exception:
-            pass
+        await safe_send_json(websocket, {"type": "state", "state": "READY"})
 
 @router.websocket("/ws/voice")
 async def voice_websocket(websocket: WebSocket):
@@ -173,15 +222,19 @@ async def voice_websocket(websocket: WebSocket):
     session = ConversationSession(session_id=f"voice_session_{int(time.time())}")
     client_sample_rate = 16000
     
+    # Reset runtime state to READY on connection
+    runtime_store.set_state(RuntimeState.READY)
+    runtime_store.update_activity()
+    
     # Notify frontend of clean connection
-    await websocket.send_json({"type": "system", "message": "Sentinel Local Mode Connected (V2)"})
+    await safe_send_json(websocket, {"type": "system", "message": "Sentri Local Mode Connected (V2)"})
     
     # Listeners for standby state broadcasts
     def on_standby_entered():
-        asyncio.create_task(websocket.send_json({"type": "state", "state": "STANDBY"}))
+        asyncio.create_task(safe_send_json(websocket, {"type": "state", "state": "STANDBY"}))
 
     def on_standby_exited():
-        asyncio.create_task(websocket.send_json({"type": "state", "state": "READY"}))
+        asyncio.create_task(safe_send_json(websocket, {"type": "state", "state": "READY"}))
 
     runtime_events.on("STANDBY_ENTERED", on_standby_entered)
     runtime_events.on("STANDBY_EXITED", on_standby_exited)
@@ -270,7 +323,7 @@ async def voice_websocket(websocket: WebSocket):
                             from app.tasks.task_manager import stop_all_tasks
                             stop_all_tasks()
                             session.speaking = False
-                            await websocket.send_json({"type": "interrupt"})
+                            await safe_send_json(websocket, {"type": "interrupt"})
                         elif cmd == "enter_standby":
                             runtime_service.standby()
                         elif cmd == "exit_standby":

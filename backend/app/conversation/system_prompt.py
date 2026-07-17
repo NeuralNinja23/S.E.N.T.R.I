@@ -4,12 +4,12 @@ from typing import Optional
 
 class SystemPromptProvider:
     """
-    Handles reading the sentinel.md system instructions and appending active context
+    Handles reading the sentri.md system instructions and appending active context
     such as local date/time, and manages prompt overrides.
     """
     def __init__(self, instruction_path: Optional[Path] = None):
         if instruction_path is None:
-            self.instruction_path = Path(__file__).resolve().parent.parent / "Sentinel" / "Instructions" / "sentinel.md"
+            self.instruction_path = Path(__file__).resolve().parent.parent / "Sentri" / "Instructions" / "sentri.md"
         else:
             self.instruction_path = instruction_path
 
@@ -24,13 +24,13 @@ class SystemPromptProvider:
             with open(self.instruction_path, "r", encoding="utf-8") as f:
                 base_instruction = f.read()
         except FileNotFoundError:
-            base_instruction = "You are Sentinel, a highly sophisticated digital assistant."
+            base_instruction = "You are Sentri, a highly sophisticated digital assistant."
 
         import os
-        current_dt = datetime.datetime.now().strftime("%A, %B %d, %Y, %I:%M %p")
+        current_dt = datetime.datetime.now().strftime("%A, %B %d, %Y")
         time_context = (
             f"\n\n=== TEMPORAL & ENVIRONMENT REALITY ===\n"
-            f"- Current Date/Time: {current_dt}\n"
+            f"- Current Date: {current_dt}\n"
         )
         location = os.getenv("LOCAL_LOCATION")
         if location:

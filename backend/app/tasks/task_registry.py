@@ -1,8 +1,8 @@
-from app.Sentinel.tools.fs_tools import list_directory, read_file, get_file_tree, open_resource, open_externally, open_internally
-from app.Sentinel.tools.search import search_code
-from app.Sentinel.tools.mapper import explain_architecture, explain_module, find_dependencies
-from app.Sentinel.tools.web_search import web_search
-from app.Sentinel.tools.memory_tools import remember_fact, search_memory
+from app.Sentri.tools.fs_tools import list_directory, read_file, get_file_tree, open_resource, open_externally, open_internally
+from app.Sentri.tools.search import search_code
+from app.Sentri.tools.mapper import explain_architecture, explain_module, find_dependencies
+from app.Sentri.tools.web_search import web_search
+from app.Sentri.tools.memory_tools import remember_fact, search_memory
 
 
 # Defines whether a tool runs instantly and returns, or gets queued as a background task

@@ -38,7 +38,7 @@ export const SHADOWS = {
 };
 
 export const SYSTEM_INFO = {
-    name: "SENTINEL",
+    name: "SENTRI",
     version: "V0.2.2",
     subtitle:
         "SOMETHING EXTREMELY NEURAL AND TERRIFYINGLY INTELLIGENT",

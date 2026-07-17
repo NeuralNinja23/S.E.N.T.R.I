@@ -43,7 +43,7 @@ class SpeechService {
       else if (lower.includes("resume all tasks")) govCmd = "resume";
       else if (lower.includes("stop all tasks")) govCmd = "stop";
       else if (lower.includes("standby mode") || lower.includes("standy mode") || lower.includes("enter standby")) govCmd = "enter_standby";
-      else if (lower.includes("wake up") || lower.includes("exit standby") || lower.includes("wake sentinel")) govCmd = "exit_standby";
+      else if (lower.includes("wake up") || lower.includes("exit standby") || lower.includes("wake sentri") || lower.includes("wake sentri")) govCmd = "exit_standby";
 
       if (govCmd) {
         onGovernanceCommand(govCmd);
@@ -61,7 +61,9 @@ class SpeechService {
       if (this.isActivating) return;
 
       if (
-        lower.includes("sentinel") ||
+        lower.includes("sentri") ||
+        lower.includes("sentry") ||
+        lower.includes("sentri") ||
         lower.includes("sentinal") ||
         lower.includes("daddy's home") ||
         lower.includes("daddies home") ||

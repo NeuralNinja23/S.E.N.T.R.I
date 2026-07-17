@@ -1,13 +1,13 @@
 import { Volume2, Eye, List, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 
-interface SentinelOrbProps {
+interface SentriOrbProps {
     state?: string;
 }
 
 
 
-export default function SentinelOrb({ state = "IDLE" }: SentinelOrbProps) {
+export default function SentriOrb({ state = "IDLE" }: SentriOrbProps) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -125,7 +125,7 @@ export default function SentinelOrb({ state = "IDLE" }: SentinelOrbProps) {
                     <line x1="472" y1="200" x2="464" y2="200" stroke={cyanStroke} strokeWidth="1.5" strokeOpacity="0.8" />
 
                     {/* Content text */}
-                    <text x="400" y="193" textAnchor="middle" fill={cyanText} className="font-bold tracking-[0.25em] text-[18px]">SENTINEL</text>
+                    <text x="400" y="193" textAnchor="middle" fill={cyanText} className="font-bold tracking-[0.25em] text-[18px]">SENTRI</text>
                     <text x="400" y="211" textAnchor="middle" fill={subText} className="font-bold tracking-[0.2em] text-[10px] uppercase opacity-95">{state}</text>
 
 
@@ -149,7 +149,7 @@ export default function SentinelOrb({ state = "IDLE" }: SentinelOrbProps) {
                     <path id="hud-text-path-1" d="M 312 182 A 92 92 0 0 1 488 182" fill="none" />
                     <text fill={cyanText} fontSize="7.5" fontFamily="monospace" letterSpacing="2px" opacity="0.75" className="font-bold">
                         <textPath href="#hud-text-path-1" startOffset="5%">
-                        {isStandby ? "// STANDBY_MODE // POWER_SAVING" : "// SYSTEM_OK // SENTINEL_ACTIVE"}
+                        {isStandby ? "// STANDBY_MODE // POWER_SAVING" : "// SYSTEM_OK // SENTRI_ACTIVE"}
                         </textPath>
                     </text>
                 </g>

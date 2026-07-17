@@ -3,7 +3,7 @@ import json
 import re
 from pathlib import Path
 from app.services.logger import get_logger
-from app.Sentinel.tools.fs_tools import ROOT_DIR
+from app.Sentri.tools.fs_tools import ROOT_DIR
 
 logger = get_logger("search_tools")
 
@@ -13,7 +13,7 @@ def search_code(query: str, search_type: str = "text", path: str = ".") -> str:
     search_type can be: 'text', 'filename', 'class', 'function', 'symbol'
     Returns JSON string with matching files and snippets.
     """
-    from app.Sentinel.tools.fs_tools import resolve_absolute_path
+    from app.Sentri.tools.fs_tools import resolve_absolute_path
     search_root = resolve_absolute_path(path) if path else ROOT_DIR
     logger.info(f"Searching {search_root} for '{query}' (type: {search_type})")
     

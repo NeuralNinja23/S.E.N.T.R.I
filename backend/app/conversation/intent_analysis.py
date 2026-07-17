@@ -27,12 +27,12 @@ class IntentAnalyzer:
                 "do i live with family", "do i live with friends", "my residential status"
             ],
             "PROJECTS_QUERY": [
-                "what projects am i building", "what projects am i working on", "tell me about sentinel",
+                "what projects am i building", "what projects am i working on", "tell me about sentri",
                 "what is genxai studio", "my active software projects", "projects i am developing",
-                "what coding projects do i have", "sentinel development"
+                "what coding projects do i have", "sentri development"
             ],
             "GOALS_QUERY": [
-                "why am i building sentinel", "what is my goal", "what motivates me", "what is my mission",
+                "why am i building sentri", "what is my goal", "what motivates me", "what is my mission",
                 "what are my long term goals", "what do i aim to achieve", "what drives me",
                 "my goal to build a jarvis assistant"
             ],

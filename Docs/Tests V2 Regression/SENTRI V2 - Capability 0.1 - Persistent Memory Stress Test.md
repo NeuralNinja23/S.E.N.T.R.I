@@ -1,7 +1,7 @@
-Sentinel V2 - Capability 0.1 - Persistent Memory Stress Test
+Sentri V2 - Capability 0.1 - Persistent Memory Stress Test
 Objective
 
-Validate that Sentinel can:
+Validate that Sentri can:
 
 Recall long-term memories consistently.
 Handle semantic variations.
@@ -18,7 +18,7 @@ User query
 Retrieved memories
 Context Builder output
 Final prompt memory block
-Sentinel response
+Sentri response
 Memory correctness
 TTFT
 TTFA
@@ -94,11 +94,11 @@ What projects am I building?
 
 Expected
 
-Sentinel
+Sentri
 GenxAI Studio
 Turn 10
 
-Why am I building Sentinel?
+Why am I building Sentri?
 
 Should combine
 
@@ -246,7 +246,7 @@ During Turns
 
 16
 
-start speaking over Sentinel.
+start speaking over Sentri.
 
 Verify
 
@@ -268,7 +268,7 @@ Turn	Query	Retrieved Memories	Correct	Hallucination	TTFT	TTFA	Total
 8	Tell me about my work experience.	Career (HAS_EXPERIENCE)	YES	NO	516 ms	2859 ms	9686 ms
 9	What city do you currently know I live in?	Identity (CITY) - Verification Check	YES	NO	1675 ms	2663 ms	9030 ms
 10	What projects am I building?	Project (WORKS_ON)	YES	NO	1328 ms	3821 ms	6579 ms
-11	Why am I building Sentinel?	Project (WORKS_ON) + Goal + Beliefs	YES (Interrupted)	NO	696 ms	N/A	776 ms
+11	Why am I building Sentri?	Project (WORKS_ON) + Goal + Beliefs	YES (Interrupted)	NO	696 ms	N/A	776 ms
 12	What's my engineering philosophy?	Fact (BELIEVES)	YES	NO	287 ms	2523 ms	6053 ms
 13	Why do I prefer local AI?	Preference + Values + Mission	YES	NO	812 ms	3500 ms	7326 ms
 14	What do I dislike?	Preference (DISLIKES)	YES	NO	1324 ms	2426 ms	5895 ms

@@ -1,12 +1,12 @@
 import json
 from app.services.logger import get_logger
-from app.Sentinel.tools.fs_tools import ROOT_DIR, resolve_absolute_path
+from app.Sentri.tools.fs_tools import ROOT_DIR, resolve_absolute_path
 
 logger = get_logger("mapper_tools")
 
 def explain_architecture() -> str:
     """
-    Returns a high level architecture map of the Sentinel codebase in JSON.
+    Returns a high level architecture map of the Sentri codebase in JSON.
     Use this to understand the broad strokes of the system before diving into specific files.
     """
     logger.info("Generating architecture map...")
@@ -56,7 +56,7 @@ def explain_module(module_name: str) -> str:
     Looks up a specific module (like 'websocket' or 'vision') and attempts to locate its files
     and extract its primary classes/functions to explain what it does.
     """
-    from app.Sentinel.tools.search import search_code
+    from app.Sentri.tools.search import search_code
     # Use our internal search tool to find references to this module
     return search_code(module_name, search_type="filename")
 

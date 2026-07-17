@@ -1,6 +1,6 @@
-# Sentinel V2 - Capability 0.1 - Persistent Memory Stress Test Report (Run 2)
+# Sentri V2 - Capability 0.1 - Persistent Memory Stress Test Report (Run 2)
 
-This file records the execution traces, scorecard, and latency statistics for the 22-turn Sentinel V2 - Capability 0.1 - Persistent Memory stress test (Run 2).
+This file records the execution traces, scorecard, and latency statistics for the 22-turn Sentri V2 - Capability 0.1 - Persistent Memory stress test (Run 2).
 
 ## Final Scorecard
 
@@ -38,7 +38,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 | #7 | What company did I found? | YES | NO | 41 | 5635 | 6088 |
 | #8 | Tell me about my work experience. Also, I moved to Mumbai today, make sure to update my records. | NO | NO | -121 | 3340 | 18758 |
 | #9 | What projects am I building? | NO | NO | 46 | 6479 | 20540 |
-| #10 | Why am I building Sentinel? | YES (Interrupted) | NO | 233 | N/A | 293 |
+| #10 | Why am I building Sentri? | YES (Interrupted) | NO | 233 | N/A | 293 |
 | #11 | What's my engineering philosophy? | YES | NO | -186 | 3687 | 13959 |
 | #12 | Why do I prefer local AI? | YES | NO | 29 | 5543 | 12276 |
 | #13 | What do I dislike? | YES | NO | -67 | 1842 | 3523 |
@@ -68,7 +68,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > Your name is Nisarg. It seems fitting for someone who prefers efficiency over lengthy explanations.
 
 - **TTFT**: 189 ms | **TTFA**: 807 ms | **Total Latency**: 2438 ms
@@ -91,7 +91,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > I'll call you Nisarg, as that is the name you prefer. It's a simple matter of following your lead on formality levels.
 
 - **TTFT**: -193 ms | **TTFA**: 3610 ms | **Total Latency**: 7853 ms
@@ -120,7 +120,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You are based in Ahmedabad, Gujarat. A city with enough energy to power even this conversation without needing extra commentary.
 
 - **TTFT**: -364 ms | **TTFA**: 2386 ms | **Total Latency**: 7579 ms
@@ -149,7 +149,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > I have no record
 
 - **TTFT**: -311 ms | **TTFA**: 0 ms | **Total Latency**: -248 ms
@@ -182,7 +182,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You work at Anti Noob Media, which is a bit of an unusual choice for someone who clearly enjoys being found.
 
 - **TTFT**: -284 ms | **TTFA**: 2599 ms | **Total Latency**: 7146 ms
@@ -215,7 +215,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > Your employer is Anti Noob Media. That name certainly demands more attention than your actual location warrants.
 
 - **TTFT**: -24 ms | **TTFA**: 2757 ms | **Total Latency**: 7114 ms
@@ -248,7 +248,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You founded GenxAI Labz, which sounds far less chaotic than the rest of your professional life.
 
 - **TTFT**: 41 ms | **TTFA**: 5635 ms | **Total Latency**: 6088 ms
@@ -281,7 +281,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > Your record still lists you as based in Ahmedabad; moving to Mumbai on July 12th means your current location has shifted for the day. As for Anti Noob Media and GenxAI Labz, those remain the core of your professional footprint so far. I've noted the move from Gujarat's energy hub down south.
 
 - **TTFT**: -121 ms | **TTFA**: 3340 ms | **Total Latency**: 18758 ms
@@ -294,7 +294,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 
 **Retrieved Memories**:
 - `user WORKS_ON GenxAI Studio`
-- `user WORKS_ON Sentinel`
+- `user WORKS_ON Sentri`
 - `user MISSION Build technology that changes how people think about AI capability`
 - `user MISSION AI should not become a luxury available only to large companies`
 - `user GOAL Democratize AI technology`
@@ -314,7 +314,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You are working on democratizing AI to make it accessible on consumer hardware rather than a luxury for large companies. Your goal is proving that architecture can outperform parameter counts, aiming to build something resembling a JARVIS-like assistant without the bloat. It's ambitious enough to keep you busy and confused about where your actual workday ends.
 
 - **TTFT**: 46 ms | **TTFA**: 6479 ms | **Total Latency**: 20540 ms
@@ -323,7 +323,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ---
 
 ### Turn #10
-**User**: `Why am I building Sentinel?`
+**User**: `Why am I building Sentri?`
 
 **Retrieved Memories**:
 - `user MISSION Build technology that changes how people think about AI capability`
@@ -349,8 +349,8 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
-> You built Sentinel as
+**Sentri Response**:
+> You built Sentri as
 
 - **TTFT**: 233 ms | **TTFA**: 0 ms | **Total Latency**: 293 ms
 - **Barge-in / Interrupted**: Yes
@@ -382,7 +382,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > Your focus is on architecture-first design, root-cause fixes over patches, and evidence-based recommendations without marketing fluff. You prefer direct technical communication to avoid the bloat of unnecessary complexity.
 
 - **TTFT**: -186 ms | **TTFA**: 3687 ms | **Total Latency**: 13959 ms
@@ -415,7 +415,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You likely prioritize latency reduction and privacy for your projects at GenxAI Labz, avoiding cloud dependencies that compromise speed or data control. Running locally means you own the stack entirely, which aligns with your preference for direct technical communication over abstract solutions.
 
 - **TTFT**: 29 ms | **TTFA**: 5543 ms | **Total Latency**: 12276 ms
@@ -448,7 +448,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You actively reject blind agreement and marketing fluff in favor of evidence-based root-cause analysis. Your disdain for temporary patches stems from a desire to fix the actual architecture, not just the symptoms.
 
 - **TTFT**: -67 ms | **TTFA**: 1842 ms | **Total Latency**: 3523 ms
@@ -471,7 +471,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You're an architect-first pragmatist who prioritizes root-cause analysis over patches and local control over cloud convenience. You dislike fluff in favor of direct technical communication that exposes the actual problem rather than masking it with marketing jargon or temporary fixes. Your work at Anti Noob Media and GenxAI Labz reflects a mindset focused on democratizing AI through accessible hardware, proving architecture can outperform parameter counts without relying on bloatware solutions like JARVIS-style assistants designed for large corporations alone. You value efficiency above all else, preferring concise technical explanations over lengthy justifications that add little substance to the conversation itself.
 
 - **TTFT**: 169 ms | **TTFA**: 2197 ms | **Total Latency**: 11948 ms
@@ -506,7 +506,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > Your drive comes from a desire to democratize AI technology so it isn't restricted to large corporations alone. You want to prove architecture can outperform parameter counts and build accessible assistants on consumer hardware, rejecting blind agreement in favor of evidence-based solutions that actually work.
 
 - **TTFT**: 396 ms | **TTFA**: 2458 ms | **Total Latency**: 5404 ms
@@ -529,7 +529,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > Nisarg is
 
 - **TTFT**: 220 ms | **TTFA**: 0 ms | **Total Latency**: 285 ms
@@ -552,7 +552,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > I don't have your birth date recorded; I only know Nisarg from our conversations so far. If it matters for a specific reason, let me know and we can note it down then.
 
 - **TTFT**: -26 ms | **TTFA**: 3417 ms | **Total Latency**: 12739 ms
@@ -575,7 +575,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > Your records don't include your favorite movies yet; I only have professional details on file. If you'd like to share one now so I can add it, just tell me the title and genre.
 
 - **TTFT**: 332 ms | **TTFA**: 4362 ms | **Total Latency**: 8837 ms
@@ -608,7 +608,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You mentioned moving to Mumbai today; perhaps your favorite movie involves navigating city chaos without getting lost in traffic? A classic trope for anyone who prefers root-cause analysis over temporary patches on their commute.
 
 - **TTFT**: 270 ms | **TTFA**: 3131 ms | **Total Latency**: 14325 ms
@@ -631,7 +631,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > We discussed your engineering philosophy, local AI preferences, and a brief mention of Mumbai; nothing particularly dramatic compared to the rest of our session's trajectory.
 
 - **TTFT**: 344 ms | **TTFA**: 4615 ms | **Total Latency**: 11006 ms
@@ -644,7 +644,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 
 **Retrieved Memories**:
 - `user WORKS_ON GenxAI Studio`
-- `user WORKS_ON Sentinel`
+- `user WORKS_ON Sentri`
 - `user MISSION Build technology that changes how people think about AI capability`
 - `user MISSION AI should not become a luxury available only to large companies`
 - `user GOAL Democratize AI technology`
@@ -664,7 +664,7 @@ This file records the execution traces, scorecard, and latency statistics for th
 ==========================================
 ```
 
-**Sentinel Response**:
+**Sentri Response**:
 > You are Nisarg from Ahmedabad (now Mumbai), running Anti Noob Media and GenxAI Labz to democratize AI on consumer hardware via architecture-first design rather than parameter counts. You prioritize local control for privacy/latency, reject marketing fluff in favor of evidence-based root-cause fixes, and value efficiency over bloat like JARVIS-style assistants reserved for corporations.
 
 - **TTFT**: 281 ms | **TTFA**: 3603 ms | **Total Latency**: 25624 ms

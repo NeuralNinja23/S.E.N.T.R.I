@@ -25,7 +25,7 @@ class WebsocketService {
     this.ws.binaryType = "arraybuffer";
 
     this.ws.onopen = () => {
-      console.log("Connected to Sentinel Backend");
+      console.log("Connected to Sentri Backend");
       if (this.reconnectTimeout) {
         clearTimeout(this.reconnectTimeout);
         this.reconnectTimeout = null;

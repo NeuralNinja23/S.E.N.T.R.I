@@ -113,6 +113,27 @@ export default function CoreGrid() {
                             background: COLORS.cyanDark,
                         }}
                     />
+
+                    {/* S.E.N.T.R.I. text placed exactly below the visible top crosshair */}
+                    {rotation === 0 && (
+                        <div
+                            className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+                            style={{
+                                top: "-130px",
+                            }}
+                        >
+                            <span
+                                className="font-bold tracking-[0.8em] text-[40px] whitespace-nowrap"
+                                style={{
+                                    color: COLORS.cyanBright,
+                                    fontFamily: "var(--font-orbitron)",
+                                    textShadow: "0 0 14px rgba(0,229,255,0.9)",
+                                }}
+                            >
+                                S.E.N.T.R.I
+                            </span>
+                        </div>
+                    )}
                 </div>
             ))}
         </div>

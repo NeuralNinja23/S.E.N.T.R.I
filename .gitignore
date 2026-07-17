@@ -30,7 +30,7 @@ Thumbs.db
 
 # Database
 *.db
-Sentinel.db
+Sentri.db
 
 # Rotated logs
 *.log.*

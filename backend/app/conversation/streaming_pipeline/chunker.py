@@ -3,7 +3,7 @@ from typing import List, AsyncGenerator
 
 class SpeechPlanner:
     """
-    Decides when Sentinel can naturally begin speaking by analyzing the streamed tokens
+    Decides when Sentri can naturally begin speaking by analyzing the streamed tokens
     acoustically rather than just grammatically. Serves as a prosodic phrase planner.
     """
     def __init__(self, max_tokens: int = 20, min_words_for_breath: int = 6):

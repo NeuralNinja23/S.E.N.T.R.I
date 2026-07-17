@@ -1,4 +1,4 @@
-# 🌌 S.E.N.T.I.N.E.L — Spatial AI Operating System
+# 🌌 S.E.N.T.R.I — Spatial AI Operating System
 
 <div align="center">
 
@@ -9,11 +9,11 @@
 [![Kokoro TTS](https://img.shields.io/badge/Kokoro-Local_TTS-blueviolet?style=for-the-badge)](https://github.com/hexgrad/kokoro)
 [![Faster Whisper](https://img.shields.io/badge/Faster_Whisper-Local_ASR-green?style=for-the-badge)](https://github.com/SYSTRAN/faster-whisper)
 
-**Sentinel** is a next-generation, high-performance intelligent agent operating system designed to plan, execute, and remember complex user interactions. It features a stunning, futuristic sci-fi HUD dashboard combined with a low-latency, **fully local Audio-to-Audio** pipeline.
+**SENTRI** (So Everyone Needs To Remember It) is a next-generation, high-performance intelligent agent operating system designed to plan, execute, and remember complex user interactions. It features a stunning, futuristic sci-fi HUD dashboard combined with a low-latency, **fully local Audio-to-Audio** pipeline.
 
 </div>
 
-![Sentinel Dashboard](./Docs/Images/UI.png)
+![SENTRI Dashboard](./Docs/Images/UI.png)
 
 ---
 
@@ -24,7 +24,7 @@
   * **Reasoning**: `ollama` (running local models like `qwen3.5:4b`, `llama3`, etc.) to process instructions, reason through tasks, and maintain dialog state.
   * **TTS**: `kokoro` (with native support for voices like `af_sarah`) for low-latency, high-fidelity local voice synthesis.
 * **🪐 Immersive Sci-Fi HUD Dashboard**: A premium, responsive interface featuring dynamic rotating orbitals, concentric arcs, real-time particle fields, and glowing gauges showing system CPU, memory, network speed, and disk storage metrics.
-* **🛠️ Native Tool Execution**: Built-in capabilities allowing Sentinel to inspect directory trees, read/write files, manage reminders, perform web searches, and track background tasks.
+* **🛠️ Native Tool Execution**: Built-in capabilities allowing SENTRI to inspect directory trees, read/write files, manage reminders, perform web searches, and track background tasks.
 * **🧠 Persistent Categorized Memory**: Long-term categorical memory subsystem to analyze, extract, and format key user facts, preferences, relationships, and wishes into structured long-term storage.
 * **👁️ Continuous OS-level Vision (Ready)**: Background display capture module using frame-diff analysis (resized grayscale MSE difference checking) to capture visual inputs and prepare them for vision-enabled reasoning loops.
 
@@ -32,7 +32,7 @@
 
 ## ⚡ Technical Architecture Details
 
-Sentinel uses a decoupled architecture where outer layers depend on inner abstractions, and inner layers never depend on outer implementations:
+SENTRI uses a decoupled architecture where outer layers depend on inner abstractions, and inner layers never depend on outer implementations:
 
 ```
 [Browser Client] 
@@ -67,7 +67,7 @@ Sentinel uses a decoupled architecture where outer layers depend on inner abstra
 │   │   ├── conversation/     # Decoupled speech pipeline, adapter & contracts
 │   │   │   └── streaming_pipeline/
 │   │   │       └── providers/# Providers for ASR, Reasoning, and TTS
-│   │   ├── Sentinel/         # Core features and OS tools
+│   │   ├── Sentri/         # Core features and OS tools
 │   │   │   └── tools/        # OS, memory, search, and mapper tools
 │   │   ├── config.py         # App configurations & AI instructions
 │   │   ├── main.py           # Lifespan handlers & app initialization
@@ -109,7 +109,7 @@ To keep the repository clean, model weights are excluded from Git. Here is how t
 
 ### ⚡ Option A: Auto-Startup Manager (Windows Only)
 A startup script is included to quickly launch both services and run the interface in Chrome App Mode. To run it:
-1. Double-click or run `run_sentinel.bat` from the root directory.
+1. Double-click or run `run_sentri.bat` from the root directory.
 2. Closing the dedicated Chrome app window will automatically clean up and shut down both the Next.js and FastAPI servers.
 
 ### ⚙️ Option B: Manual Setup

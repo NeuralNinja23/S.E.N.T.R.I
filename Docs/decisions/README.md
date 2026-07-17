@@ -1,6 +1,6 @@
 # Architecture Decision Records — Index
 
-Architecture Decision Records (ADRs) document the **why** behind significant design choices in Sentinel V2. Each ADR is lightweight, permanent, and version-controlled.
+Architecture Decision Records (ADRs) document the **why** behind significant design choices in SENTRI V2. Each ADR is lightweight, permanent, and version-controlled.
 
 ---
 

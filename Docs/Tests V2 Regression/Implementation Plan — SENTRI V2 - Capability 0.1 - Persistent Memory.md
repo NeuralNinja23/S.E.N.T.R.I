@@ -1,8 +1,8 @@
-Implementation Plan — Sentinel V2 - Capability 0.1 - Persistent Memory
+Implementation Plan — Sentri V2 - Capability 0.1 - Persistent Memory
 
-Sentinel V2 has successfully achieved stable natural conversation through the Conversation Runtime. The next milestone is to introduce a dedicated Memory Runtime, responsible for storing and retrieving long-term user memories.
+Sentri V2 has successfully achieved stable natural conversation through the Conversation Runtime. The next milestone is to introduce a dedicated Memory Runtime, responsible for storing and retrieving long-term user memories.
 
-The objective of this phase is not to build a complete cognitive memory system. It is to give Sentinel the ability to remember structured facts about the user across conversations.
+The objective of this phase is not to build a complete cognitive memory system. It is to give Sentri the ability to remember structured facts about the user across conversations.
 
 This runtime should follow the same architectural principles as the Conversation Runtime:
 
@@ -16,7 +16,7 @@ Design Philosophy
 
 The Memory Runtime answers one question:
 
-"What does Sentinel know about the user?"
+"What does Sentri know about the user?"
 
 This runtime is not responsible for:
 
@@ -321,7 +321,7 @@ Verify retrieval by subject.
 Verify retrieval by predicate.
 Manual
 
-Confirm Sentinel can
+Confirm Sentri can
 
 Store
 

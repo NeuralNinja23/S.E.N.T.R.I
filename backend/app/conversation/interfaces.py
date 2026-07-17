@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 
 class ISpeechToSpeechModel(abc.ABC):
     """
-    Abstract interface for streaming speech-to-speech models in Sentinel V2.
+    Abstract interface for streaming speech-to-speech models in Sentri V2.
     """
     
     @abc.abstractmethod

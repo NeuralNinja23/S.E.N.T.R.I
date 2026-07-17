@@ -28,7 +28,7 @@ logger = logging.getLogger("conversation_runtime")
 
 class RuntimeSupervisor:
     """
-    Manages the concurrent worker tasks of the Sentinel V2 Conversation Runtime,
+    Manages the concurrent worker tasks of the Sentri V2 Conversation Runtime,
     monitoring their health and coordinating graceful hierarchical cancellation.
     """
     def __init__(self, context: TurnContext, channels: TurnChannels):
@@ -105,7 +105,7 @@ class RuntimeSupervisor:
 
 class ConversationRuntime(ISpeechToSpeechModel):
     """
-    Sentinel V2 Conversation Runtime. Coordinated concurrent execution of ASR, LLM, Chunker,
+    Sentri V2 Conversation Runtime. Coordinated concurrent execution of ASR, LLM, Chunker,
     and TTS workers, using TurnContext for state and TurnChannels for data.
     """
     def __init__(self):
@@ -405,7 +405,7 @@ class ConversationRuntime(ISpeechToSpeechModel):
             t_total = (time.time() - context.clock.speech_end_time) * 1000
             
             logger.info(
-                f"\n[SENTINEL V2 EXECUTION TRACE] {turn_id}\n"
+                f"\n[SENTRI V2 EXECUTION TRACE] {turn_id}\n"
                 f"  ASR Duration:         {t_asr:>8.0f} ms\n"
                 f"  Prompt Build:         {t_prompt:>8.0f} ms\n"
                 f"  LLM TTFT:             {t_ttft:>8.0f} ms\n"

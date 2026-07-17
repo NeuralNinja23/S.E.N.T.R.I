@@ -157,7 +157,7 @@ class AudioService {
             ort.env.wasm.numThreads = 1;
           },
           onSpeechStart: () => {
-            console.log("[Sentinel VAD] Speech started.");
+            console.log("[Sentri VAD] Speech started.");
             this.isUserSpeaking = true;
             onSpeechStart();
 
@@ -186,7 +186,7 @@ class AudioService {
             }
           },
           onSpeechEnd: () => {
-            console.log("[Sentinel VAD] User finished speaking.");
+            console.log("[Sentri VAD] User finished speaking.");
             this.isUserSpeaking = false;
             this.preSpeechBuffer = [];
             onEndOfSpeech();
@@ -198,7 +198,7 @@ class AudioService {
       await this.vadInstance.start();
 
     } catch (err) {
-      console.error('[Sentinel Audio] Error starting VAD recording:', err);
+      console.error('[Sentri Audio] Error starting VAD recording:', err);
       alert(`Recording Error: ${err}\nPlease verify microphone permissions.`);
       throw err;
     }

@@ -26,17 +26,17 @@ STANDBY_TIMEOUT_SECONDS = 900  # 15 minutes of inactivity before auto-standby
 # Memory Database Configuration
 MEMORY_DB_PATH = os.getenv(
     "MEMORY_DB_PATH",
-    str(Path(__file__).resolve().parent / "Sentinel" / "storage" / "sentinel_memory.db")
+    str(Path(__file__).resolve().parent / "Sentri" / "storage" / "sentri_memory.db")
 )
 
 
 # System Instruction Template Loader
-instruction_path = Path(__file__).parent / "Sentinel" / "Instructions" / "sentinel.md"
+instruction_path = Path(__file__).parent / "Sentri" / "Instructions" / "sentri.md"
 try:
     with open(instruction_path, "r", encoding="utf-8") as f:
-        SENTINEL_SYSTEM_INSTRUCTION = f.read()
+        SENTRI_SYSTEM_INSTRUCTION = f.read()
 except FileNotFoundError:
-    SENTINEL_SYSTEM_INSTRUCTION = "You are SENTINEL, a highly sophisticated digital assistant."
+    SENTRI_SYSTEM_INSTRUCTION = "You are SENTRI, a highly sophisticated digital assistant."
 
 import platform
 

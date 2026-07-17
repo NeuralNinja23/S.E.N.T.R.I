@@ -1,4 +1,4 @@
-"""Web search tool implementation for Sentinel."""
+"""Web search tool implementation for Sentri."""
 
 import os
 import re

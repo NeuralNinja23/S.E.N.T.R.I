@@ -18,8 +18,8 @@ const exo2 = Exo_2({
 });
 
 export const metadata: Metadata = {
-  title: "Sentinel | AI Core",
-  description: "Next-generation spatial AI operating system.",
+  title: "SENTRI | AI Core",
+  description: "SENTRI: So Everyone Needs To Remember It. Next-generation spatial AI operating system.",
 };
 
 export default function RootLayout({

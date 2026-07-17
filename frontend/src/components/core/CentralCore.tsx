@@ -1,5 +1,5 @@
 import Panel from "../ui/Panel";
-import SentinelOrb from "./SentinelOrb";
+import SentriOrb from "./SentriOrb";
 import Waveform from "./Waveform";
 import CoreGrid from "./Coregrid";
 import ScannerLine from "./scannerline";
@@ -15,10 +15,10 @@ import { Cpu, HardDrive, Share2, Wrench, Mic, Eye, List, Shield } from "lucide-r
 import { useState, useEffect } from "react";
 import { voiceService } from "../../services/voice.service";
 
-export type SentinelState = "IDLE" | "LISTENING" | "THINKING" | "SPEAKING" | "EXECUTING" | "PAUSED" | "ERROR" | "STANDBY" | "WAKING";
+export type SentriState = "IDLE" | "LISTENING" | "THINKING" | "SPEAKING" | "EXECUTING" | "PAUSED" | "ERROR" | "STANDBY" | "WAKING";
 
 interface CentralCoreProps {
-    state?: SentinelState;
+    state?: SentriState;
 }
 
 export default function CentralCore({ state = "IDLE" }: CentralCoreProps) {
@@ -39,7 +39,7 @@ export default function CentralCore({ state = "IDLE" }: CentralCoreProps) {
             <div className="relative w-full h-full z-10 max-w-4xl mx-auto">
 
                 {/* Core - Absolutely Centered */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%] flex flex-col items-center justify-center w-full h-[400px] gap-8">
+                <div className="absolute top-[54%] left-1/2 -translate-x-1/2 -translate-y-[50%] flex flex-col items-center justify-center w-full h-[400px] gap-8">
 
 
 
@@ -53,7 +53,7 @@ export default function CentralCore({ state = "IDLE" }: CentralCoreProps) {
                             <DataArcs />
                         </div>
 
-                        <SentinelOrb state={state} />
+                        <SentriOrb state={state} />
 
                         {/* Dynamic State Pulses */}
                         {state === "LISTENING" && <ListeningPulse />}
@@ -67,7 +67,7 @@ export default function CentralCore({ state = "IDLE" }: CentralCoreProps) {
                                 onClick={() => voiceService.sendCommand("EXIT_STANDBY")}
                                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 px-6 py-3 bg-red-950/40 border border-red-500 text-red-500 hover:bg-red-950/70 hover:border-red-400 hover:text-red-400 rounded-md font-bold tracking-[0.25em] text-[10px] uppercase shadow-[0_0_20px_rgba(239,68,68,0.2)] transition-all cursor-pointer select-none"
                             >
-                                Wake Sentinel
+                                Wake Sentri
                             </button>
                         )}
 

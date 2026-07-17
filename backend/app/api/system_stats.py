@@ -72,6 +72,19 @@ def system_stats():
     except Exception:
         pass
 
+    # Disk telemetry (C: on Windows, root on others)
+    disk_total = 0
+    disk_used = 0
+    disk_percent = 0
+    try:
+        disk_path = "C:\\" if platform.system() == "Windows" else "/"
+        disk = psutil.disk_usage(disk_path)
+        disk_total = round(disk.total / (1024 ** 3))
+        disk_used = round(disk.used / (1024 ** 3))
+        disk_percent = round(disk.percent, 1)
+    except Exception:
+        pass
+
     return {
         "cpu": round(cpu_percent, 1),
         "mem": round(mem.percent, 1),
@@ -83,4 +96,7 @@ def system_stats():
         "processes": len(psutil.pids()),
         "uptime_seconds": uptime_seconds,
         "os": platform.system(),
+        "disk_total": disk_total,
+        "disk_used": disk_used,
+        "disk_percent": disk_percent,
     }

@@ -1,6 +1,6 @@
-# Sentinel V2 — Conversation Domain Architecture
+# SENTRI V2 — Conversation Domain Architecture
 
-This document defines the architecture of the real-time conversation subsystem in Sentinel V2, outlining the transition from a cascaded pipeline to a native speech-to-speech model.
+This document defines the architecture of the real-time conversation subsystem in SENTRI V2, outlining the transition from a cascaded pipeline to a native speech-to-speech model.
 
 ---
 
@@ -91,7 +91,7 @@ InferenceRegistry.register(
 )
 ```
 
-Sentinel reasons about model capability without model-name branching:
+SENTRI reasons about model capability without model-name branching:
 
 ```python
 if engine.supports("vision"):
@@ -143,7 +143,7 @@ It does **not** own: memory retrieval, tool execution, runtime state, or watchdo
 
 ## 8. Future Roadmap
 
-- **Model switching**: Add `sentinel_voice_v1` to `InferenceRegistry` — no other code changes required.
+- **Model switching**: Add `sentri_voice_v1` to `InferenceRegistry` — no other code changes required.
 - **Audio tokenization**: Native audio tokenizers (SNAC, Encodec) for waveform-to-token conversion.
 - **Tool Calling Alignment**: Speech model text output mapped to ADK function call schemas for memory graph updates during voice.
 - **Vision**: Screen frames injected per-turn when `engine.supports("vision")` is true.

@@ -14,7 +14,7 @@ interface ChatBoxProps {
 
 interface ChatMessage {
     time: string;
-    sender: "user" | "sentinel";
+    sender: "user" | "sentri";
     text: string;
 }
 
@@ -46,7 +46,7 @@ export default function ChatBox({
         });
     };
 
-    // Parse raw logs from voiceStore to extract user and sentinel dialogue
+    // Parse raw logs from voiceStore to extract user and sentri dialogue
     const messages: ChatMessage[] = logs
         .map((logStr) => {
             const match = logStr.match(/^\[(\d{2}:\d{2}:\d{2})\]\s*(.*)$/s);
@@ -67,11 +67,11 @@ export default function ChatBox({
                     text: content.replace("USER COMMAND:", "").trim(),
                 };
             }
-            if (content.startsWith("SENTINEL:")) {
+            if (content.startsWith("SENTRI:")) {
                 return {
                     time: timeVal,
-                    sender: "sentinel" as const,
-                    text: content.replace("SENTINEL:", "").trim(),
+                    sender: "sentri" as const,
+                    text: content.replace("SENTRI:", "").trim(),
                 };
             }
             return null;
@@ -109,7 +109,7 @@ export default function ChatBox({
             </div>
 
             <div className="flex justify-start items-start">
-                <SectionTitle title="Sentinel Dialogue" />
+                <SectionTitle title="SENTRI Dialogue" />
             </div>
 
             {/* Chat Container */}
@@ -153,7 +153,7 @@ export default function ChatBox({
                                     <div className="flex items-center gap-2 mb-1 text-[8px] tracking-widest uppercase opacity-60">
                                         {!isUser && <Cpu size={8} className="text-orange-500" />}
                                         <span style={{ color: isUser ? COLORS.cyan : COLORS.orange }}>
-                                            {isUser ? "USER" : "SENTINEL"}
+                                            {isUser ? "USER" : "SENTRI"}
                                         </span>
                                         <span className="text-slate-500">{msg.time}</span>
                                         {isUser && <User size={8} className="text-cyan-400" />}
@@ -203,7 +203,7 @@ export default function ChatBox({
                     <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan-500" />
 
                     <input
-                        placeholder="Type message to Sentinel..."
+                        placeholder="Type message to SENTRI..."
                         className="w-full bg-transparent outline-none text-[11px] px-3 py-2.5 tracking-wider text-cyan-200 mr-20"
                         style={{ color: COLORS.cyanBright }}
                         value={inputValue}
@@ -218,7 +218,7 @@ export default function ChatBox({
                             <button
                                 onClick={() => voiceService.stopSpeaking()}
                                 className="p-2 text-red-500 border border-red-500/50 rounded hover:bg-red-950/40 hover:text-red-400 transition-colors"
-                                title="Stop Sentinel from Speaking"
+                                title="Stop SENTRI from Speaking"
                             >
                                 <Square size={13} fill="currentColor" />
                             </button>

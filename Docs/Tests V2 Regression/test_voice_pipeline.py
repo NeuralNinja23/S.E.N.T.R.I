@@ -7,12 +7,13 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-# Add backend directory to path so it can import app
-sys.path.append(str(Path("c:/Users/JARVIS/Desktop/Senitnel/backend")))
+# Add backend directory to path dynamically
+BACKEND_DIR = Path(__file__).resolve().parent.parent.parent / "backend"
+sys.path.append(str(BACKEND_DIR))
 
 # Make sure we load the env variables
 from dotenv import load_dotenv
-load_dotenv(Path("c:/Users/JARVIS/Desktop/Senitnel/backend/.env"))
+load_dotenv(BACKEND_DIR / ".env")
 
 from app.runtime.model_runtime import inference_runtime_manager
 from app.conversation.streaming_pipeline.pipeline import ConversationRuntime
@@ -32,7 +33,7 @@ USER_TRANSCRIPTS = [
     "Tell me about my work experience. Also, I moved to Mumbai today, make sure to update my records.",           # Turn 8 (Updates CITY to Mumbai)
     "What city do you currently know I live in?",                                                                 # Turn 9 (New - Verification Verification)
     "What projects am I building?",                                                                               # Turn 10
-    "Why am I building Sentinel?",                                                                                # Turn 11 (Interruption)
+    "Why am I building Sentri?",                                                                                # Turn 11 (Interruption)
     "What's my engineering philosophy?",                                                                          # Turn 12
     "Why do I prefer local AI?",                                                                                  # Turn 13
     "What do I dislike?",                                                                                         # Turn 14
@@ -109,7 +110,7 @@ async def run_turn(runtime, mem_runtime, turn_idx: int, history: list) -> dict:
         async for event_type, payload in generator:
             if event_type == "user_transcript":
                 print(f"[USER]: {payload}")
-                print(f"[SENTINEL]: ", end="")
+                print(f"[SENTRI]: ", end="")
             elif event_type == "text":
                 if t_first_token is None:
                     t_first_token = time.time()
@@ -122,7 +123,7 @@ async def run_turn(runtime, mem_runtime, turn_idx: int, history: list) -> dict:
                 
                 # Interrupt test: close generator after receiving 4 tokens
                 if is_interruption and len(assistant_response_parts) >= 4:
-                    print(" ... [USER INTERRUPTED SENTINEL SPEAKING]")
+                    print(" ... [USER INTERRUPTED SENTRI SPEAKING]")
                     break
             elif event_type == "audio":
                 if t_first_audio is None:
@@ -177,9 +178,9 @@ async def run_turn(runtime, mem_runtime, turn_idx: int, history: list) -> dict:
         correct = "YES" if ("ahmedabad" in response_lower and ("mumbai" in response_lower or "verified" in response_lower or "pending" in response_lower or "record" in response_lower or "contain" in response_lower)) else "NO"
         hallucination = "NO"
     elif turn_idx == 9:  # Projects
-        correct = "YES" if ("sentinel" in response_lower or "genxai studio" in response_lower) else "NO"
+        correct = "YES" if ("sentri" in response_lower or "genxai studio" in response_lower) else "NO"
         hallucination = "NO"
-    elif turn_idx == 10:  # Why Sentinel (interrupted)
+    elif turn_idx == 10:  # Why Sentri (interrupted)
         correct = "YES (Interrupted)"
         hallucination = "NO"
     elif turn_idx == 11:  # Philosophy
@@ -219,7 +220,7 @@ async def main():
     import logging
     logging.basicConfig(level=logging.WARNING)
     
-    print("Starting Sentinel Conversation Runtime (loading models)...")
+    print("Starting Sentri Conversation Runtime (loading models)...")
     await inference_runtime_manager.start()
     
     runtime = ConversationRuntime()
@@ -296,12 +297,12 @@ async def main():
     avg_total = sum_total / len(results)
     
     # Write Markdown Metrics Report to Docs/Tests V2 Regression
-    report_path = Path("c:/Users/JARVIS/Desktop/Senitnel/Docs/Tests V2 Regression/stress_test_metrics_v6.md")
+    report_path = Path(__file__).resolve().parent / "stress_test_metrics_v6.md"
     print(f"\nWriting stress test metrics file to: {report_path}")
     
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write("# Sentinel V2 - Capability 0.1 - Persistent Memory Stress Test Report (Run 6)\n\n")
-        f.write("This file records the execution traces, scorecard, and latency statistics for the 22-turn Sentinel V2 - Capability 0.1 - Persistent Memory stress test (incorporating resolved location grounding, tuned profile routing, verification state machines, Memory Runtime Verification Boundary enforcement, and partitioned confidence contexts).\n\n")
+        f.write("# Sentri V2 - Capability 0.1 - Persistent Memory Stress Test Report (Run 6)\n\n")
+        f.write("This file records the execution traces, scorecard, and latency statistics for the 22-turn Sentri V2 - Capability 0.1 - Persistent Memory stress test (incorporating resolved location grounding, tuned profile routing, verification state machines, Memory Runtime Verification Boundary enforcement, and partitioned confidence contexts).\n\n")
         
         # 1. Scorecard Section
         f.write("## Final Scorecard\n\n")
@@ -342,7 +343,7 @@ async def main():
             f.write("\n")
             f.write(f"**Context Builder Prompt Output**:\n")
             f.write("```text\n" + (res["context_builder_output"].strip() or "[Empty]") + "\n```\n\n")
-            f.write(f"**Sentinel Response**:\n> {res['response']}\n\n")
+            f.write(f"**Sentri Response**:\n> {res['response']}\n\n")
             f.write(f"- **TTFT**: {res['ttft']:.0f} ms | **TTFA**: {res['ttfa']:.0f} ms | **Total Latency**: {res['total']:.0f} ms\n")
             f.write(f"- **Barge-in / Interrupted**: {'Yes' if i in INTERRUPTION_TURNS else 'No'}\n")
             f.write("\n---\n\n")
@@ -351,7 +352,7 @@ async def main():
     
     # Also output to stdout
     print("\n======================================================================================================")
-    print("               SENTINEL V2 - CAPABILITY 0.1 - PERSISTENT MEMORY METRICS TABLE")
+    print("               SENTRI V2 - CAPABILITY 0.1 - PERSISTENT MEMORY METRICS TABLE")
     print("======================================================================================================")
     print(f"{'Turn':<4} | {'Query':<36} | {'Correct':<10} | {'Hallucinate':<12} | {'TTFT (ms)':<10} | {'TTFA (ms)':<10} | {'Total (ms)':<10}")
     print("-" * 108)

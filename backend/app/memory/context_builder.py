@@ -57,42 +57,42 @@ class MemoryContextBuilder:
                     pred_clean = m.predicate.lower().replace("_", " ")
                     conf = m.confidence or 1.0
                     
-                    # Convert to natural You/Your phrasing for direct LLM mapping
+                    # Convert to natural third-person phrasing to prevent LLM identity confusion
                     if m.subject.lower() == "user":
                         if pred_clean == "name":
-                            lines.append(f"- Your name: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user's name: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "preferred name":
-                            lines.append(f"- You prefer to be called: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user prefers to be called: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "city":
-                            lines.append(f"- Your city: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user's city: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "state":
-                            lines.append(f"- Your state: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user's state: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "country":
-                            lines.append(f"- Your country: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user's country: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "lives with":
-                            lines.append(f"- You live with: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user lives with: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "lives independently":
-                            lines.append(f"- You live independently: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user lives independently: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "works at":
-                            lines.append(f"- You work at: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user works at: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "founded":
-                            lines.append(f"- You founded: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user founded: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "works on":
-                            lines.append(f"- You work on: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user works on: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "has experience":
-                            lines.append(f"- You have experience in: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user has experience in: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "dislikes":
-                            lines.append(f"- You dislike: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user dislikes: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "prefers":
-                            lines.append(f"- You prefer: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user prefers: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "believes":
-                            lines.append(f"- You believe: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user believes: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "values":
-                            lines.append(f"- You value: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user values: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "interested in":
-                            lines.append(f"- You are interested in: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user is interested in: {m.object} (Confidence: {conf:.2f})")
                         else:
-                            lines.append(f"- You {pred_clean}: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user {pred_clean}: {m.object} (Confidence: {conf:.2f})")
                     else:
                         lines.append(f"- {m.subject} {pred_clean}: {m.object} (Confidence: {conf:.2f})")
                 lines.append("")
@@ -106,39 +106,39 @@ class MemoryContextBuilder:
                     
                     if m.subject.lower() == "user":
                         if pred_clean == "name":
-                            lines.append(f"- Your name: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user's name: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "preferred name":
-                            lines.append(f"- You prefer to be called: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user prefers to be called: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "city":
-                            lines.append(f"- Your city: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user's city: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "state":
-                            lines.append(f"- Your state: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user's state: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "country":
-                            lines.append(f"- Your country: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user's country: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "lives with":
-                            lines.append(f"- You live with: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user lives with: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "lives independently":
-                            lines.append(f"- You live independently: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user lives independently: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "works at":
-                            lines.append(f"- You work at: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user works at: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "founded":
-                            lines.append(f"- You founded: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user founded: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "works on":
-                            lines.append(f"- You work on: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user works on: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "has experience":
-                            lines.append(f"- You have experience in: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user has experience in: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "dislikes":
-                            lines.append(f"- You dislike: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user dislikes: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "prefers":
-                            lines.append(f"- You prefer: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user prefers: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "believes":
-                            lines.append(f"- You believe: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user believes: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "values":
-                            lines.append(f"- You value: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user values: {m.object} (Confidence: {conf:.2f})")
                         elif pred_clean == "interested in":
-                            lines.append(f"- You are interested in: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user is interested in: {m.object} (Confidence: {conf:.2f})")
                         else:
-                            lines.append(f"- You {pred_clean}: {m.object} (Confidence: {conf:.2f})")
+                            lines.append(f"- The user {pred_clean}: {m.object} (Confidence: {conf:.2f})")
                     else:
                         lines.append(f"- {m.subject} {pred_clean}: {m.object} (Confidence: {conf:.2f})")
                 lines.append("")

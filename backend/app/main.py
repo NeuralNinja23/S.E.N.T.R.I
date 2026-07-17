@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
     task_loop.cancel()
     app.state.tool_executor.shutdown(wait=True)
 
-app = FastAPI(title="Sentinel Voice API", lifespan=lifespan)
+app = FastAPI(title="SENTRI Voice API", lifespan=lifespan)
 
 # Allow all origins for local development
 app.add_middleware(
@@ -63,5 +63,5 @@ app.include_router(upload_router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Sentinel Voice Backend Online"}
+    return {"message": "SENTRI Voice Backend Online"}
 
