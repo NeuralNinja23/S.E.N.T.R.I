@@ -13,7 +13,7 @@
 
 </div>
 
-![SENTRI Dashboard](./Docs/Images/UI.png)
+![SENTRI Dashboard](./Docs/Images/UI.png?v=2)
 
 ---
 
