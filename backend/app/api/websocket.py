@@ -4,7 +4,7 @@ import time
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
-from app.config import STANDBY_TIMEOUT_SECONDS, SENTRI_SYSTEM_INSTRUCTION
+from app.config import STANDBY_TIMEOUT_SECONDS, get_system_instruction
 from app.services.logger import get_logger
 from app.runtime.runtime_state import runtime_store, RuntimeState, runtime_events
 from app.runtime.runtime_service import runtime_service
@@ -80,12 +80,16 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: 
                 session.metrics.record_first_token()
                 session.metrics.add_tokens(len(chunk["data"].split()))
                 accumulated_text.append(chunk["data"])
-                await safe_send_json(websocket, {"type": "text", "data": chunk["data"]})
             elif chunk["type"] == "user_transcript":
                 session.append_user_turn(chunk["data"])
+                print(f"\n\n🗣️  [USER SPEAK]: {chunk['data']}\n", flush=True)
                 await safe_send_json(websocket, {"type": "user", "data": chunk["data"]})
                 
         final_response = "".join(accumulated_text).strip()
+        # Send the complete response as a single message to the chatbox
+        if final_response:
+            await safe_send_json(websocket, {"type": "text", "data": final_response})
+        print(f"🤖 [SENTRI SPEAK]: {final_response}\n", flush=True)
         session.end_turn(final_text=final_response)
         
         # Log latency results
@@ -109,6 +113,7 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
     session.append_user_turn(text_query)
     try:
         # Send USER log to frontend
+        print(f"\n\n⌨️  [USER TEXT]: {text_query}\n", flush=True)
         await safe_send_json(websocket, {"type": "user", "data": text_query})
         
         # Check for memory erasure requests (e.g. "forget Rohan")
@@ -173,17 +178,19 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
         except Exception as mem_err:
             logger.error(f"Failed to build memory profile: {mem_err}")
             warm_profile_block = ""
-            
         import os
         import datetime
-        current_dt = datetime.datetime.now().strftime("%A, %B %d, %Y")
-        time_context = f"\n\n=== TEMPORAL & ENVIRONMENT REALITY ===\n- Current Date: {current_dt}\n"
+        now = datetime.datetime.now()
+        current_date = now.strftime("%A, %B %d, %Y")
+        current_time = now.strftime("%I:%M %p")
+        time_context = f"\n\n=== TEMPORAL & ENVIRONMENT REALITY ===\n- Current Date: {current_date}\n- Current Time: {current_time}\n"
         location = os.getenv("LOCAL_LOCATION")
         if location:
             time_context += f"- Current Location: {location}\n"
         time_context += "======================================\n"
         
-        final_instruction = SENTRI_SYSTEM_INSTRUCTION + time_context
+        import time
+        final_instruction = get_system_instruction() + time_context + f"\n\n<!-- cache_bypass: {time.time()} -->"
         if warm_profile_block:
             final_instruction += "\n\n" + warm_profile_block
             
@@ -193,15 +200,30 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
             
         response_text = await ConversationEngine.run_text_turn(
             system_prompt=final_instruction,
-            text_query=text_query
+            text_query=text_query,
+            websocket=websocket
         )
-        
         if not response_text:
-            response_text = "How may I assist you?"
+            logger.error(f"[SESSION {session.session_id}] Generation failure: empty response from model.")
+            try:
+                debug_path = r"C:\Users\JARVIS\.gemini\antigravity-ide\brain\05416677-6b3f-44a9-ab02-29fddfedefe5\scratch\failed_prompt.txt"
+                with open(debug_path, "w", encoding="utf-8") as f:
+                    f.write(f"=== SYSTEM PROMPT ===\n{final_instruction}\n\n=== USER QUERY ===\n{text_query}\n")
+            except Exception as debug_err:
+                logger.error(f"Failed to write debug file: {debug_err}")
+                
+            await safe_send_json(websocket, {
+                "type": "system",
+                "status": "generation_failure",
+                "message": "Generation failed: the model returned an empty response."
+            })
+            session.end_turn(final_text="")
+            return
             
         # Log response safely to console (prevent UnicodeEncodeError on Windows console)
         safe_response_log = response_text.encode('ascii', errors='replace').decode('ascii')
         logger.info(f"Ollama response: {safe_response_log}")
+        print(f"🤖 [SENTRI TEXT]: {response_text}\n", flush=True)
         session.end_turn(final_text=response_text)
         
         # Log text output to frontend

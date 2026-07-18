@@ -24,7 +24,8 @@ class ConversationEngine:
     async def run_voice_turn(
         self, 
         input_audio_stream: AsyncGenerator[bytes, None],
-        history: list = None
+        history: list = None,
+        websocket=None
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Executes a real-time duplex voice turn.
@@ -41,10 +42,13 @@ class ConversationEngine:
         if hasattr(self.model, "process_audio_stream_with_text"):
             import inspect
             sig = inspect.signature(self.model.process_audio_stream_with_text)
+            params = {}
             if "history" in sig.parameters:
-                response_gen = self.model.process_audio_stream_with_text(input_audio_stream, history=history)
-            else:
-                response_gen = self.model.process_audio_stream_with_text(input_audio_stream)
+                params["history"] = history
+            if "websocket" in sig.parameters:
+                params["websocket"] = websocket
+            
+            response_gen = self.model.process_audio_stream_with_text(input_audio_stream, **params)
 
             async for event_type, content in response_gen:
                 if event_type == "audio":
@@ -60,12 +64,14 @@ class ConversationEngine:
     @staticmethod
     async def run_text_turn(
         system_prompt: str,
-        text_query: str
+        text_query: str,
+        websocket=None
     ) -> str:
         """
         Executes a text reasoning query by routing to the adapter.
         """
         return await ConversationAdapter.generate_async(
             system_prompt=system_prompt,
-            user_content=text_query
+            user_content=text_query,
+            websocket=websocket
         )

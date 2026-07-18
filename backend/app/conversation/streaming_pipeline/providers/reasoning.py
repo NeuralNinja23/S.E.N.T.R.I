@@ -1,6 +1,8 @@
 import json
 import httpx
 import logging
+import asyncio
+import functools
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator
 from app.conversation.contracts import ReasoningRequest
@@ -12,7 +14,7 @@ class ReasoningProvider(ABC):
     Interface for LLM reasoning providers.
     """
     @abstractmethod
-    async def stream(self, request: ReasoningRequest) -> AsyncGenerator[str, None]:
+    async def stream(self, request: ReasoningRequest, websocket=None) -> AsyncGenerator[str, None]:
         """
         Streams response text tokens given a unified ReasoningRequest payload.
         """
@@ -31,7 +33,11 @@ class OllamaReasoningProvider(ReasoningProvider):
         # Single persistent client — avoids creating/tearing down TCP connections per turn
         self._client = httpx.AsyncClient(timeout=120.0)
 
-    async def stream(self, request: ReasoningRequest) -> AsyncGenerator[str, None]:
+    async def stream(self, request: ReasoningRequest, websocket=None) -> AsyncGenerator[str, None]:
+        # Import tools and registry dynamically to prevent circular imports
+        from app.tasks.tool_schemas import TOOL_SCHEMAS
+        from app.tasks.task_registry import TOOL_REGISTRY
+
         system_content = request.system_prompt
         if request.memory and request.memory.strip():
             system_content += f"\n\n[GRAPH MEMORY STORE]\n{request.memory}\n"
@@ -49,67 +55,104 @@ class OllamaReasoningProvider(ReasoningProvider):
 
         messages = [{"role": "system", "content": system_content}]
         messages.extend(mapped_history)
+        
         # Append /no_think to disable Qwen3.x thinking mode for real-time voice.
-        # Thinking mode spends 30-60s on internal reasoning before the first token,
-        # which is completely incompatible with low-latency voice responses.
         user_content = request.user_input.strip() + " /no_think"
         messages.append({"role": "user", "content": user_content})
 
         url = f"{self.base_url}/api/chat"
-        payload = {
-            "model": self.model_name,
-            "messages": messages,
-            "stream": True,
-            "keep_alive": -1,       # Never evict from VRAM between turns
-            "think": False,         # Disable thinking mode (Qwen3.x / Ollama >=0.6)
-            "options": {
-                "temperature": 0.6,
-                "num_ctx": 4096     # Reduced KV cache: 16384->4096 saves ~1.5GB VRAM
-            }
-        }
 
-        try:
-            async with self._client.stream("POST", url, json=payload) as response:
-                if response.status_code != 200:
-                    logger.error(f"Ollama endpoint returned HTTP error {response.status_code}")
+        # Loop up to 5 turns for tool calling
+        for turn in range(5):
+            payload = {
+                "model": self.model_name,
+                "messages": messages,
+                "stream": False,       # Run non-streamed first to easily parse tool calls
+                "think": False,         # Disable thinking mode
+                "keep_alive": -1,       # Keep model in VRAM
+                "tools": TOOL_SCHEMAS,  # Pass tools list
+                "options": {
+                    "temperature": 0.6,
+                    "num_ctx": 12288,
+                    "repeat_penalty": 1.1
+                }
+            }
+
+            try:
+                res = await self._client.post(url, json=payload)
+                if res.status_code != 200:
+                    logger.error(f"Ollama endpoint returned HTTP error {res.status_code}")
                     return
 
-                async for line in response.aiter_lines():
-                    if not line.strip():
-                        continue
-                    try:
-                        data = json.loads(line)
+                data = res.json()
+                message = data.get("message", {})
+                tool_calls = message.get("tool_calls", [])
 
-                        # Stream tokens to caller
-                        token = data.get("message", {}).get("content", "")
-                        if token:
-                            yield token
+                if tool_calls:
+                    # Append assistant message containing the tool calls to conversation history
+                    messages.append(message)
 
-                        # Final chunk contains Ollama's internal timing breakdown
-                        if data.get("done"):
-                            load_ms   = data.get("load_duration", 0) / 1e6
-                            prompt_ms = data.get("prompt_eval_duration", 0) / 1e6
-                            eval_ms   = data.get("eval_duration", 0) / 1e6
-                            total_ms  = data.get("total_duration", 0) / 1e6
-                            eval_count = data.get("eval_count", 0)
-                            tok_per_s  = (eval_count / (eval_ms / 1000)) if eval_ms > 0 else 0
+                    for tool_call in tool_calls:
+                        func_info = tool_call.get("function", {})
+                        name = func_info.get("name")
+                        args = func_info.get("arguments", {})
 
-                            logger.info(
-                                f"[OLLAMA TIMING] "
-                                f"load={load_ms:.0f}ms | "
-                                f"prompt_eval={prompt_ms:.0f}ms | "
-                                f"eval={eval_ms:.0f}ms ({eval_count} tokens, {tok_per_s:.1f} tok/s) | "
-                                f"total={total_ms:.0f}ms"
-                            )
+                        args_str = ", ".join([f"{k}={json.dumps(v)}" for k, v in args.items()])
+                        logger.info(f"[VOICE TURN] Ollama requested tool: {name}({args_str})")
 
-                            if load_ms > 500:
-                                logger.warning(
-                                    f"[OLLAMA] High load_duration ({load_ms:.0f}ms) — "
-                                    "model was not resident in VRAM. Check keep_alive and VRAM pressure."
-                                )
+                        if websocket:
+                            try:
+                                await websocket.send_json({
+                                    "type": "system",
+                                    "message": f"TOOL_CALL: {name} ({args_str})"
+                                })
+                            except Exception as ws_err:
+                                logger.warning(f"Could not send TOOL_CALL log: {ws_err}")
 
-                    except Exception as parse_err:
-                        logger.error(f"Failed to parse Ollama JSON chunk: {parse_err}")
+                        # Execute the tool from TOOL_REGISTRY
+                        func = TOOL_REGISTRY.get(name)
+                        if func:
+                            try:
+                                loop = asyncio.get_running_loop()
+                                pfunc = functools.partial(func, **args)
+                                result = await loop.run_in_executor(None, pfunc)
+                            except Exception as exec_err:
+                                result = json.dumps({"error": f"Tool execution failed: {exec_err}"})
+                        else:
+                            result = json.dumps({"error": f"Tool '{name}' not found in registry."})
 
-        except Exception as conn_err:
-            logger.error(f"Ollama stream HTTP request failed: {conn_err}")
+                        logger.info(f"[VOICE TURN] Tool {name} result: {str(result)[:200]}")
+
+                        if websocket:
+                            try:
+                                res_summary = str(result)[:150] + ("..." if len(str(result)) > 150 else "")
+                                await websocket.send_json({
+                                    "type": "system",
+                                    "message": f"TOOL_RESULT: {name} -> {res_summary}"
+                                })
+                            except Exception as ws_err:
+                                logger.warning(f"Could not send TOOL_RESULT log: {ws_err}")
+
+                        # Append the tool result back to the message history
+                        messages.append({
+                            "role": "tool",
+                            "content": str(result)
+                        })
+
+                    # Continue to next turn to let Ollama reason on the tool results
+                    continue
+
+                else:
+                    # No tool calls requested, this is the final text response!
+                    content = message.get("content", "")
+                    
+                    # Yield tokens by splitting the text into words with a tiny delay to simulate streaming
+                    words = content.split(" ")
+                    for i, word in enumerate(words):
+                        yield word + (" " if i < len(words) - 1 else "")
+                        await asyncio.sleep(0.02)  # 20ms delay to overlap synthesis and speech planner
+                    return
+
+            except Exception as e:
+                logger.error(f"Error in Ollama tool calling loop: {e}")
+                return

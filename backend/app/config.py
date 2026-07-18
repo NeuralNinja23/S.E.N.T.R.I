@@ -11,7 +11,7 @@ CONVERSATION_ENGINE = os.getenv("CONVERSATION_ENGINE", "decoupled_pipeline")
 PIPELINE_PROVIDER = os.getenv("PIPELINE_PROVIDER", "streaming_pipeline")
 ASR_PROVIDER = os.getenv("ASR_PROVIDER", "faster_whisper")
 REASONING_PROVIDER = os.getenv("REASONING_PROVIDER", "ollama")
-REASONING_MODEL = os.getenv("REASONING_MODEL", "qwen3.5:4b")
+REASONING_MODEL = os.getenv("REASONING_MODEL", "phi4-mini:latest")
 TTS_PROVIDER = os.getenv("TTS_PROVIDER", "kokoro")
 TTS_SPEAKER_VOICE = os.getenv("TTS_SPEAKER_VOICE", "bm_george")
 
@@ -31,12 +31,13 @@ MEMORY_DB_PATH = os.getenv(
 
 
 # System Instruction Template Loader
-instruction_path = Path(__file__).parent / "Sentri" / "Instructions" / "sentri.md"
-try:
-    with open(instruction_path, "r", encoding="utf-8") as f:
-        SENTRI_SYSTEM_INSTRUCTION = f.read()
-except FileNotFoundError:
-    SENTRI_SYSTEM_INSTRUCTION = "You are SENTRI, a highly sophisticated digital assistant."
+def get_system_instruction() -> str:
+    instruction_path = Path(__file__).parent / "Sentri" / "Instructions" / "sentri.md"
+    try:
+        with open(instruction_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return "You are SENTRI, a highly sophisticated digital assistant."
 
 import platform
 

@@ -108,6 +108,13 @@ class IntentAnalyzer:
         Classifies the user query string into one of the structured intents.
         Falls back to 'UNKNOWN_QUERY' if similarity score is below a threshold.
         """
+        query_clean = query.lower().strip().strip("?!. ")
+        # Map common ASR phonetic greeting errors
+        query_clean = re.sub(r"\b(high centri|high sentri|high centry|high sentry|hi centri|hi sentri|hi centry|hi sentry|hello sentri)\b", "hi", query_clean)
+        
+        if query_clean in ("hi", "hello", "hey", "greetings", "yo", "sup", "good morning", "good afternoon", "good evening") or query_clean.startswith(("hi ", "hello ", "hey ", "greetings ", "good morning", "good afternoon", "good evening")):
+            return "IDENTITY_QUERY"
+
         query_words = self._tokenize(query)
         if not query_words:
             return "UNKNOWN_QUERY"

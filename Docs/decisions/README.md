@@ -20,11 +20,12 @@ Architecture Decision Records (ADRs) document the **why** behind significant des
 | ID | Title | Status |
 |---|---|---|
 | [ADR-0001](ADR-0001.md) | Conversation Engine Abstraction | Accepted |
-| [ADR-0002](ADR-0002.md) | Speech Transport Layer | Accepted |
+| [ADR-0002](ADR-0002.md) | Decoupled Streaming Speech Pipeline | Accepted |
 | [ADR-0003](ADR-0003.md) | Inference Runtime Manager | Accepted |
 | [ADR-0004](ADR-0004.md) | Memory Retrieval Boundary | Accepted |
 | [ADR-0005](ADR-0005.md) | Conversation Model Development | Accepted |
 | [ADR-0006](ADR-0006.md) | Decommissioning World Awareness | Accepted |
+| [ADR-0007](ADR-0007.md) | Provider Independence | Accepted |
 
 ---
 

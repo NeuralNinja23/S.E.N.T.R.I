@@ -36,16 +36,47 @@ class SpeechService {
       const isFinal = event.results[event.results.length - 1].isFinal;
       const lower = transcript.toLowerCase();
 
-      // Intercept governance commands immediately
+      // Intercept governance commands immediately for barge-in / interruption
       let govCmd: string | null = null;
-      if (lower.includes("stop speaking")) govCmd = "stop_speaking";
-      else if (lower.includes("pause all tasks")) govCmd = "pause";
-      else if (lower.includes("resume all tasks")) govCmd = "resume";
-      else if (lower.includes("stop all tasks")) govCmd = "stop";
-      else if (lower.includes("standby mode") || lower.includes("standy mode") || lower.includes("enter standby")) govCmd = "enter_standby";
-      else if (lower.includes("wake up") || lower.includes("exit standby") || lower.includes("wake sentri") || lower.includes("wake sentri")) govCmd = "exit_standby";
+      const cleanLower = lower.trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+      
+      // Short, natural barge-in commands
+      const stopPhrases = [
+        "stop speaking", "stop", "shut up", "be quiet", "silence", "enough",
+        "hold on", "wait"
+      ];
+      
+      if (stopPhrases.includes(cleanLower) || stopPhrases.some(p => cleanLower.endsWith(" " + p))) {
+        govCmd = "stop_speaking";
+      } else if (lower.includes("pause all tasks")) {
+        govCmd = "pause";
+      } else if (lower.includes("resume all tasks")) {
+        govCmd = "resume";
+      } else if (lower.includes("stop all tasks")) {
+        govCmd = "stop";
+      } else if (
+        lower.includes("standby mode") || 
+        lower.includes("stand by mode") || 
+        lower.includes("stand-by mode") || 
+        lower.includes("standy mode") || 
+        lower.includes("enter standby") ||
+        lower.includes("enter stand by")
+      ) {
+        govCmd = "enter_standby";
+      } else if (
+        lower.includes("wake up") || 
+        lower.includes("exit standby") || 
+        lower.includes("exit stand by") ||
+        lower.includes("wake sentri") || 
+        lower.includes("wake sentry") ||
+        lower.includes("wake centri") ||
+        lower.includes("wake centry")
+      ) {
+        govCmd = "exit_standby";
+      }
 
       if (govCmd) {
+        console.log(`[SpeechService] Intercepted governance command: ${govCmd}`);
         onGovernanceCommand(govCmd);
         return;
       }
@@ -60,11 +91,14 @@ class SpeechService {
 
       if (this.isActivating) return;
 
+      // Check wake words including all ASR phonetic variations
       if (
         lower.includes("sentri") ||
         lower.includes("sentry") ||
-        lower.includes("sentri") ||
+        lower.includes("centri") ||
+        lower.includes("centry") ||
         lower.includes("sentinal") ||
+        lower.includes("centinal") ||
         lower.includes("daddy's home") ||
         lower.includes("daddies home") ||
         lower.includes("daddy is home")

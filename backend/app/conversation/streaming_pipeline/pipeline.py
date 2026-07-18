@@ -121,8 +121,10 @@ class ConversationRuntime(ISpeechToSpeechModel):
 
         from app.conversation.intent_analysis import IntentAnalyzer
         from app.conversation.retrieval_planner import RetrievalPlanner
+        from app.conversation.quick_responses import QuickResponseEngine
         self.intent_analyzer = IntentAnalyzer()
         self.retrieval_planner = RetrievalPlanner()
+        self.quick_response_engine = QuickResponseEngine()
 
         self._register_event_loggers()
 
@@ -142,7 +144,8 @@ class ConversationRuntime(ISpeechToSpeechModel):
     async def process_audio_stream_with_text(
         self,
         audio_generator: AsyncGenerator[bytes, None],
-        history: List[Dict[str, Any]] = None
+        history: List[Dict[str, Any]] = None,
+        websocket=None
     ) -> AsyncGenerator[Tuple[str, Union[bytes, str]], None]:
         """
         Coordinated real-time speech processing turn. Co-allocates LLM reasoning, SpeechPlanner,
@@ -216,6 +219,21 @@ class ConversationRuntime(ISpeechToSpeechModel):
         except Exception as e:
             logger.error(f"Failed to retrieve structured memories: {e}")
             structured_context = ""
+            intent = "UNKNOWN_QUERY"
+
+        # ── Quick Response Bypass ─────────────────────────────────
+        # For deterministic intents (greetings, identity, time, etc.),
+        # skip the LLM entirely and go straight to TTS.
+        quick_response = self.quick_response_engine.respond(intent, transcript)
+        if quick_response:
+            logger.info(f"[{turn_id}] Quick response: '{quick_response}' (intent={intent})")
+            yield "text", quick_response
+            # Synthesize TTS directly
+            async for audio_bytes in self.tts.synthesize(quick_response):
+                yield "audio", audio_bytes
+            self.event_bus.publish(AudioFinished(turn_id=turn_id))
+            return
+        # ──────────────────────────────────────────────────────────
             
         combined_memory = docs_context
         if structured_context:
@@ -227,11 +245,16 @@ class ConversationRuntime(ISpeechToSpeechModel):
         context.memory_context = combined_memory
         context.clock.prompt_built_time = time.time()
 
+        # Rewrite greeting transcripts to standard 'hi' to prevent Ollama entity confusion
+        model_input_transcript = transcript
+        if intent == "IDENTITY_QUERY":
+            model_input_transcript = "hi"
+
         reasoning_request = self.prompt_builder.build(
             system_prompt=system_prompt,
             memory=combined_memory,
             history=history or [],
-            transcript=transcript
+            transcript=model_input_transcript
         )
         self.event_bus.publish(ReasoningStarted(turn_id=turn_id))
 
@@ -242,7 +265,7 @@ class ConversationRuntime(ISpeechToSpeechModel):
             first_token = True
             context.clock.llm_start_time = time.time()
             try:
-                async for token in self.reasoning.stream(reasoning_request):
+                async for token in self.reasoning.stream(reasoning_request, websocket=websocket):
                     if context.cancel_token.is_set():
                         break
                     
@@ -268,6 +291,44 @@ class ConversationRuntime(ISpeechToSpeechModel):
             finally:
                 context.clock.llm_end_time = time.time()
 
+        import re
+        def clean_voice_phrase(text: str) -> str:
+            if not text:
+                return ""
+            # Strip factual checks rejections
+            text = re.sub(r"^[iI] don't have that information\.?", "", text)
+            # Strip generic helper / closing questions — covers all observed phi4-mini patterns
+            cliches = [
+                # "How may/can I assist/help/serve/further ..."
+                r"\b[hH]ow (?:can|may|else may|else can) (?:I |Sentri |we )(?:further |help |assist |serve |be of service).*$",
+                # "What can Sentri/I do ..."
+                r"\b[wW]hat (?:can|else can) (?:I |Sentri )(?:do|help).*$",
+                # "Is there anything else ..."
+                r"\b[iI]s there anything (?:else |specific |)(?:you|I|that).*$",
+                # "If there's anything ... let me know"
+                r"\b[iI]f there'?s anything.*(?:let me know|I can help|assist).*$",
+                # "How's your day going?" / "How may we continue?"
+                r"\b[hH]ow(?:'s| is) your (?:day|evening|night|morning).*$",
+                r"\b[hH]ow may we continue\??.*$",
+                # "Feel free to ask ..."
+                r"\b[fF]eel free to (?:ask|reach out|let me know).*$",
+                # "Please feel free ..."
+                r"\b[pP]lease (?:feel free|let me know|don't hesitate).*$",
+                # "I'm here to assist/help ..."
+                r"\b[iI]'?m (?:here|ready|at your service).*(?:assist|help|for you|for any).*$",
+                # "I am here and ready ..."
+                r"\b[iI] am here and ready.*$",
+                # "Your feedback is important ..."
+                r"\b[yY]our feedback is important.*$",
+                # "Thank you for bringing this up ..."
+                r"\b[tT]hank you for (?:bringing|asking|your).*$",
+                # "How can I further assist you?" at end
+                r"[—–-]\s*[iI]'?m here now.*$",
+            ]
+            for cliche in cliches:
+                text = re.sub(cliche, "", text, flags=re.IGNORECASE)
+            return text.strip()
+
         async def speech_planner_worker():
             """Consumes LLM tokens, plans acoustic chunks, and passes to TTS."""
             token_delays = []
@@ -280,8 +341,10 @@ class ConversationRuntime(ISpeechToSpeechModel):
                         # Flush planner
                         remaining = self.speech_planner.flush()
                         if remaining:
-                            self.event_bus.publish(ChunkReady(turn_id=turn_id, text=remaining))
-                            await channels.phrase_queue.put((time.time(), remaining))
+                            cleaned_remaining = clean_voice_phrase(remaining)
+                            if cleaned_remaining:
+                                self.event_bus.publish(ChunkReady(turn_id=turn_id, text=cleaned_remaining))
+                                await channels.phrase_queue.put((time.time(), cleaned_remaining))
                         # Signal TTS complete
                         await channels.phrase_queue.put((time.time(), None))
                         break
@@ -289,8 +352,10 @@ class ConversationRuntime(ISpeechToSpeechModel):
                     async for phrase in self.speech_planner.feed(token):
                         if context.clock.first_phrase_time == 0.0:
                             context.clock.first_phrase_time = time.time()
-                        self.event_bus.publish(ChunkReady(turn_id=turn_id, text=phrase))
-                        await channels.phrase_queue.put((time.time(), phrase))
+                        cleaned_phrase = clean_voice_phrase(phrase)
+                        if cleaned_phrase:
+                            self.event_bus.publish(ChunkReady(turn_id=turn_id, text=cleaned_phrase))
+                            await channels.phrase_queue.put((time.time(), cleaned_phrase))
             except asyncio.CancelledError:
                 pass
             except Exception as e:
