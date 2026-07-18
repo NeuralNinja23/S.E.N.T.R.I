@@ -26,6 +26,8 @@ Architecture Decision Records (ADRs) document the **why** behind significant des
 | [ADR-0005](ADR-0005.md) | Conversation Model Development | Accepted |
 | [ADR-0006](ADR-0006.md) | Decommissioning World Awareness | Accepted |
 | [ADR-0007](ADR-0007.md) | Provider Independence | Accepted |
+| [ADR-0008](ADR-0008.md) | Tool Calling Architecture | Accepted |
+| [ADR-0009](ADR-0009.md) | Uncensored Model Policy | Accepted |
 
 ---
 
