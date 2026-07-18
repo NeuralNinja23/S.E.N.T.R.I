@@ -1,863 +1,451 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S.E.N.T.R.I — Someone Everyone Needs To Remember</title>
-    <meta name="description" content="A fully local, real-time voice AI companion with persistent memory, autonomous tool execution, and a sci-fi HUD interface.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --bg: #050508;
-            --surface: #0d0d14;
-            --border: rgba(100, 200, 255, 0.08);
-            --border-hover: rgba(100, 200, 255, 0.2);
-            --cyan: #00d4ff;
-            --purple: #7c3aed;
-            --green: #22c55e;
-            --pink: #f43f5e;
-            --text: #e2e8f0;
-            --text-dim: #64748b;
-            --glass: rgba(13, 13, 20, 0.6);
-            --glass-border: rgba(100, 200, 255, 0.1);
+<html class="dark scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S.E.N.T.R.I — Someone Everyone Needs To Remember</title>
+<meta name="description" content="A fully local, real-time voice AI companion with persistent memory, autonomous tool execution, and a sci-fi HUD interface.">
+<!-- Tailwind CSS & Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00d4ff',
+                        secondary: '#7c3aed',
+                        accent: '#22c55e',
+                        bgBase: '#050508'
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Public Sans", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    }
+                }
+            }
         }
-
-        html { scroll-behavior: smooth; }
-
+    </script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Public+Sans:wght@500&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            overflow-x: hidden;
-            line-height: 1.7;
+            background-color: #050508;
+            color: white;
+            font-family: 'Inter', sans-serif;
         }
-
-        /* ─── Canvas Background ─── */
-        #particles {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 0;
-            pointer-events: none;
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
-
-        /* ─── Radial Glow ─── */
-        .glow-top {
-            position: fixed;
-            top: -40vh; left: 50%;
-            transform: translateX(-50%);
-            width: 120vw; height: 80vh;
-            background: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.06) 0%, transparent 70%);
-            z-index: 0;
-            pointer-events: none;
+        
+        .glass-panel {
+            background: rgba(5, 5, 8, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 212, 255, 0.1);
         }
-
-        /* ─── Layout ─── */
-        .container {
-            position: relative;
-            z-index: 1;
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 24px;
+        
+        .glow-text {
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
         }
-
-        section {
-            padding: 100px 0;
+        
+        .glow-sm {
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
         }
-
-        /* ─── Navigation ─── */
-        nav {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 100;
-            padding: 16px 0;
-            backdrop-filter: blur(20px);
-            background: rgba(5, 5, 8, 0.8);
-            border-bottom: 1px solid var(--border);
-            transition: all 0.3s ease;
+        
+        .hover\:glow-sm:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
         }
-
-        nav .container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .nav-logo {
-            font-size: 1.1rem;
-            font-weight: 700;
-            letter-spacing: 0.15em;
-            color: var(--cyan);
-            text-decoration: none;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 32px;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text-dim);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            letter-spacing: 0.05em;
-            transition: color 0.2s;
-        }
-
-        .nav-links a:hover { color: var(--cyan); }
-
-        /* ─── Hero ─── */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding-top: 80px;
-        }
-
-        .hero-badge {
-            display: inline-block;
-            padding: 6px 16px;
-            border: 1px solid var(--border);
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            letter-spacing: 0.1em;
-            color: var(--cyan);
-            margin-bottom: 40px;
-            backdrop-filter: blur(10px);
-            background: rgba(0, 212, 255, 0.04);
-        }
-
-        .hero h1 {
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 700;
-            letter-spacing: 0.2em;
-            background: linear-gradient(135deg, var(--cyan) 0%, #a78bfa 50%, var(--cyan) 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer 4s linear infinite;
-            margin-bottom: 16px;
-        }
-
+        
         @keyframes shimmer {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
-
-        .hero-subtitle {
-            font-size: 1.05rem;
-            color: var(--text-dim);
-            letter-spacing: 0.2em;
-            font-weight: 300;
-            margin-bottom: 48px;
+        .text-shimmer {
+            background-size: 200% auto;
+            animation: shimmer 4s linear infinite;
         }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050508; }
+        ::-webkit-scrollbar-thumb { background: rgba(124, 58, 237, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 212, 255, 0.5); }
 
-        .hero-description {
-            max-width: 620px;
-            font-size: 1.15rem;
-            line-height: 1.8;
-            color: var(--text);
-            font-weight: 300;
-            margin-bottom: 48px;
-        }
-
-        .hero-description strong {
-            color: var(--cyan);
-            font-weight: 500;
-        }
-
-        .hero-cta {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 28px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.25s ease;
-            cursor: pointer;
-            border: none;
-            letter-spacing: 0.03em;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--cyan), #0ea5e9);
-            color: #000;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.3);
-        }
-
-        .btn-ghost {
-            background: transparent;
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
-        .btn-ghost:hover {
-            border-color: var(--border-hover);
-            background: rgba(100, 200, 255, 0.04);
-        }
-
-        /* ─── Screenshot ─── */
-        .screenshot-section {
-            padding: 0 0 80px;
-        }
-
-        .screenshot-wrapper {
-            position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            box-shadow: 0 0 80px rgba(0, 212, 255, 0.06), 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        .screenshot-wrapper img {
-            width: 100%;
-            display: block;
-        }
-
-        .screenshot-glow {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, transparent 60%, var(--bg) 100%);
-            pointer-events: none;
-        }
-
-        /* ─── Section Headers ─── */
-        .section-header {
-            text-align: center;
-            margin-bottom: 64px;
-        }
-
-        .section-label {
-            display: inline-block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            color: var(--cyan);
-            margin-bottom: 16px;
-            padding: 4px 12px;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            border-radius: 4px;
-        }
-
-        .section-header h2 {
-            font-size: clamp(1.8rem, 4vw, 2.5rem);
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
-
-        .section-header p {
-            color: var(--text-dim);
-            max-width: 550px;
-            margin: 0 auto;
-            font-size: 1.05rem;
-        }
-
-        /* ─── Feature Cards ─── */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .feature-card {
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 36px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .feature-card:hover {
-            border-color: var(--border-hover);
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .feature-card:hover::before { opacity: 1; }
-
-        .feature-icon {
-            font-size: 1.8rem;
-            margin-bottom: 16px;
-            display: block;
-        }
-
-        .feature-card h3 {
-            font-size: 1.15rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .feature-card p {
-            color: var(--text-dim);
-            font-size: 0.92rem;
-            line-height: 1.7;
-            margin-bottom: 20px;
-        }
-
-        .feature-specs {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .spec-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.82rem;
-        }
-
-        .spec-key {
-            background: rgba(0, 212, 255, 0.08);
-            color: var(--cyan);
-            padding: 2px 10px;
-            border-radius: 4px;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 500;
-            font-size: 0.75rem;
-            min-width: 72px;
-            text-align: center;
-        }
-
-        .spec-val {
-            color: var(--text-dim);
-        }
-
-        .feature-card:nth-child(2) .spec-key { background: rgba(124, 58, 237, 0.12); color: var(--purple); }
-        .feature-card:nth-child(3) .spec-key { background: rgba(34, 197, 94, 0.1); color: var(--green); }
-        .feature-card:nth-child(4) .spec-key { background: rgba(244, 63, 94, 0.1); color: var(--pink); }
-
-        /* ─── Architecture ─── */
-        .arch-block {
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 48px;
-            overflow-x: auto;
-        }
-
-        .arch-block pre {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
-            line-height: 1.8;
-            color: var(--text-dim);
-            overflow-x: auto;
-        }
-
-        .arch-note {
-            margin-top: 32px;
-            padding: 20px 24px;
-            border-left: 2px solid var(--cyan);
-            background: rgba(0, 212, 255, 0.03);
-            border-radius: 0 8px 8px 0;
-            font-size: 0.92rem;
-            color: var(--text-dim);
-        }
-
-        .arch-note strong { color: var(--cyan); }
-
-        /* ─── Getting Started ─── */
-        .steps {
-            display: flex;
-            flex-direction: column;
-            gap: 32px;
-        }
-
-        .step {
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 32px 36px;
-            display: flex;
-            gap: 24px;
-            align-items: flex-start;
-            transition: all 0.3s ease;
-        }
-
-        .step:hover {
-            border-color: var(--border-hover);
-        }
-
-        .step-number {
-            flex-shrink: 0;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 1rem;
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(124, 58, 237, 0.15));
-            color: var(--cyan);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-        }
-
-        .step-content h3 {
-            font-size: 1.05rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .step-content p {
-            color: var(--text-dim);
-            font-size: 0.9rem;
-            margin-bottom: 16px;
-        }
-
-        .code-block {
-            background: #0a0a12;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px 20px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
-            line-height: 1.7;
-            color: var(--text-dim);
-            overflow-x: auto;
-        }
-
-        .code-block .cmd { color: var(--cyan); }
-        .code-block .comment { color: #4a5568; }
-
-        /* ─── Tech Stack ─── */
-        .tech-strip {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-top: 40px;
-        }
-
-        .tech-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            border: 1px solid var(--border);
-            border-radius: 999px;
-            font-size: 0.78rem;
-            font-weight: 500;
-            color: var(--text-dim);
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            transition: all 0.2s;
-        }
-
-        .tech-pill:hover {
-            border-color: var(--border-hover);
-            color: var(--text);
-        }
-
-        .tech-dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        /* ─── Footer ─── */
-        footer {
-            border-top: 1px solid var(--border);
-            padding: 48px 0;
-            text-align: center;
-        }
-
-        footer a {
-            color: var(--cyan);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        footer p {
-            color: var(--text-dim);
-            font-size: 0.85rem;
-            margin-top: 8px;
-        }
-
-        footer .tagline {
-            font-style: italic;
-            color: #475569;
-            font-size: 0.8rem;
-            margin-top: 16px;
-        }
-
-        /* ─── Scroll Animations ─── */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.7s ease, transform 0.7s ease;
-        }
-
-        .fade-in.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* ─── Responsive ─── */
-        @media (max-width: 768px) {
-            .features-grid { grid-template-columns: 1fr; }
-            .nav-links { display: none; }
-            .hero h1 { letter-spacing: 0.1em; }
-            .hero-subtitle { letter-spacing: 0.1em; font-size: 0.85rem; }
-            section { padding: 64px 0; }
-            .arch-block { padding: 24px; }
-            .step { flex-direction: column; }
-        }
+        /* Scroll fade-in */
+        .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
     </style>
 </head>
-<body>
+<body class="relative min-h-screen selection:bg-primary/30 selection:text-white antialiased">
 
-<canvas id="particles"></canvas>
-<div class="glow-top"></div>
+<!-- WebGL Shader Background -->
+<div class="fixed inset-0 w-full h-full z-[-1] opacity-60 pointer-events-none" style="display:block;">
+<canvas id="shader-canvas" style="display:block;width:100%;height:100%"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas');
+  function syncSize() {
+    const w = canvas.clientWidth || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  }
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(syncSize).observe(canvas);
+  syncSize();
+
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+void main() { gl_Position = vec4(a_position, 0.0, 1.0); }`;
+  const fs = `precision highp float;
+uniform float u_time;
+uniform vec2 u_resolution;
+void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+    vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+    float dist = length(p - vec2(0.0, 1.5));
+    vec3 glowColor = vec3(0.0, 0.4, 0.5);
+    float glow = 0.5 / (dist + 0.5);
+    glow *= 0.5 + 0.2 * sin(u_time * 0.5);
+    vec2 grid = fract(uv * 20.0);
+    float lines = smoothstep(0.0, 0.02, grid.x) * smoothstep(1.0, 0.98, grid.x) + 
+                  smoothstep(0.0, 0.02, grid.y) * smoothstep(1.0, 0.98, grid.y);
+    vec3 gridColor = vec3(0.0, 0.8, 1.0) * lines * 0.05;
+    float particles = 0.0;
+    for(float i = 0.0; i < 20.0; i++) {
+        vec2 pos = vec2(sin(u_time * 0.2 + i * 1.5), cos(u_time * 0.3 + i * 2.1));
+        particles += 0.001 / length(p - pos);
+    }
+    vec3 color = vec3(0.02, 0.02, 0.03);
+    color += glowColor * glow;
+    color += gridColor;
+    color += vec3(0.0, 0.8, 1.0) * particles;
+    gl_FragColor = vec4(color, 1.0);
+}`;
+  function cs(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
 
 <!-- Navigation -->
-<nav>
-    <div class="container">
-        <a href="#" class="nav-logo">S.E.N.T.R.I</a>
-        <ul class="nav-links">
-            <li><a href="#capabilities">Capabilities</a></li>
-            <li><a href="#architecture">Architecture</a></li>
-            <li><a href="#start">Get Started</a></li>
-            <li><a href="https://github.com/NeuralNinja23/S.E.N.T.R.I" target="_blank">GitHub ↗</a></li>
-        </ul>
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 py-4 bg-[#050508]/80 backdrop-blur-md font-headline uppercase tracking-widest border-b border-[#00d4ff]/20 shadow-[0_0_15px_rgba(0,212,255,0.1)]">
+    <a href="#" class="font-headline font-bold text-2xl tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-[#00d4ff] to-[#7c3aed] hover:scale-105 transition-all duration-200 no-underline">
+        S.E.N.T.R.I
+    </a>
+    <div class="hidden md:flex items-center gap-8">
+        <a class="text-white/70 hover:text-[#00d4ff] transition-colors text-sm no-underline" href="#capabilities">Capabilities</a>
+        <a class="text-white/70 hover:text-[#00d4ff] transition-colors text-sm no-underline" href="#architecture">Architecture</a>
+        <a class="text-white/70 hover:text-[#00d4ff] transition-colors text-sm no-underline" href="#get-started">Get Started</a>
+        <a class="text-white/70 hover:text-[#00d4ff] transition-colors text-sm no-underline" href="https://github.com/NeuralNinja23/S.E.N.T.R.I" target="_blank">GitHub ↗</a>
     </div>
 </nav>
 
-<!-- Hero -->
-<section class="hero">
-    <div class="container">
-        <span class="hero-badge">v2.0.1 — PERSISTENT MEMORY</span>
-        <h1>S.E.N.T.R.I</h1>
-        <p class="hero-subtitle">SOMEONE EVERYONE NEEDS TO REMEMBER</p>
-        <p class="hero-description">
-            A <strong>personal AI operating system</strong> that listens, speaks, remembers, and acts.
+<!-- Main Content -->
+<main class="relative pt-24 pb-16 z-10 flex flex-col items-center">
+
+<!-- 1. HERO SECTION -->
+<section class="w-full min-h-[90vh] flex flex-col items-center justify-center text-center px-4 relative">
+    <!-- Decorative Orbitals -->
+    <div class="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+        <div class="w-[600px] h-[600px] rounded-full border-[0.5px] border-primary animate-[spin_60s_linear_infinite]"></div>
+        <div class="w-[800px] h-[800px] rounded-full border-[0.5px] border-secondary absolute animate-[spin_90s_linear_infinite_reverse]"></div>
+    </div>
+    <div class="z-10 max-w-4xl mx-auto flex flex-col items-center gap-6">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-sm">
+            <span class="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_theme('colors.accent')]"></span>
+            <span class="font-mono text-xs text-primary/90 tracking-widest uppercase">v2.0.1 — PERSISTENT MEMORY</span>
+        </div>
+        <h1 class="font-headline font-extrabold text-7xl md:text-9xl tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-primary via-white to-secondary text-shimmer glow-text">
+            S.E.N.T.R.I
+        </h1>
+        <h2 class="font-display text-2xl md:text-3xl text-white/80 font-medium tracking-wide">
+            Someone Everyone Needs To Remember
+        </h2>
+        <p class="font-body text-lg md:text-xl text-white/50 max-w-2xl mt-4 leading-relaxed">
+            A personal AI operating system that listens, speaks, remembers, and acts.
             Real-time voice. Persistent memory. Autonomous tools.
             Running entirely on your own hardware — no cloud, no telemetry, no compromises.
         </p>
-        <div class="hero-cta">
-            <a href="#start" class="btn btn-primary">Get Started →</a>
-            <a href="https://github.com/NeuralNinja23/S.E.N.T.R.I" class="btn btn-ghost" target="_blank">View Source</a>
+        <div class="flex flex-col sm:flex-row gap-4 mt-10">
+            <a href="#get-started" class="px-8 py-4 rounded-lg bg-gradient-to-r from-primary to-blue-600 text-bgBase font-headline font-bold text-lg hover:scale-105 hover:shadow-[0_0_30px_rgba(0,212,255,0.4)] transition-all flex items-center gap-2 group no-underline">
+                Get Started
+                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </a>
+            <a href="https://github.com/NeuralNinja23/S.E.N.T.R.I" target="_blank" class="px-8 py-4 rounded-lg border border-white/20 bg-white/5 backdrop-blur-md text-white font-headline font-bold text-lg hover:bg-white/10 hover:border-white/40 transition-all flex items-center gap-2 group no-underline">
+                <span class="material-symbols-outlined text-white/70 group-hover:text-white transition-colors">code</span>
+                View Source
+            </a>
+        </div>
+    </div>
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-10 flex flex-col items-center gap-2 text-white/30 animate-bounce">
+        <span class="font-label text-xs uppercase tracking-widest">Explore</span>
+        <span class="material-symbols-outlined">expand_more</span>
+    </div>
+</section>
+
+<!-- 2. SCREENSHOT SECTION -->
+<section class="w-full max-w-7xl mx-auto px-4 py-20 relative z-20">
+    <div class="relative w-full rounded-xl overflow-hidden glass-panel border-primary/30 p-2 shadow-[0_0_40px_rgba(0,212,255,0.15)] group fade-in">
+        <!-- Window Chrome -->
+        <div class="absolute top-0 left-0 w-full h-8 bg-bgBase/80 border-b border-primary/20 flex items-center px-4 gap-2 z-10">
+            <div class="w-3 h-3 rounded-full bg-red-500/50"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500/50"></div>
+            <div class="ml-4 font-mono text-[10px] text-white/30 tracking-widest uppercase">Sys.Core.Visual_Output</div>
+        </div>
+        <div class="relative mt-6 rounded-lg overflow-hidden">
+            <img alt="SENTRI HUD Dashboard" class="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500" src="ui.png"/>
+            <div class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-bgBase via-bgBase/80 to-transparent"></div>
         </div>
     </div>
 </section>
 
-<!-- Screenshot -->
-<section class="screenshot-section">
-    <div class="container">
-        <div class="screenshot-wrapper fade-in">
-            <img src="ui.png" alt="SENTRI HUD Dashboard" />
-            <div class="screenshot-glow"></div>
+<!-- 3. CAPABILITIES SECTION -->
+<section class="w-full max-w-7xl mx-auto px-4 py-24 flex flex-col items-center" id="capabilities">
+    <div class="flex flex-col items-center mb-16 text-center fade-in">
+        <div class="inline-flex items-center px-3 py-1 rounded-full border border-secondary/30 bg-secondary/10 mb-4">
+            <span class="font-mono text-[10px] text-secondary tracking-[0.2em] uppercase">Modules</span>
+        </div>
+        <h3 class="font-headline text-4xl md:text-5xl font-bold tracking-tight text-white glow-text">CAPABILITIES</h3>
+        <p class="font-body text-white/50 mt-4 max-w-lg">Four pillars. Zero cloud dependencies. Every component runs locally on consumer hardware.</p>
+        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mt-6 opacity-50"></div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <!-- Card 1: Voice -->
+        <div class="glass-panel p-8 rounded-xl flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
+            <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 text-primary mb-2 group-hover:bg-primary/20 transition-colors">
+                <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">mic</span>
+            </div>
+            <h4 class="font-display text-xl font-bold text-white">Real-Time Voice Pipeline</h4>
+            <p class="font-body text-white/60 text-sm leading-relaxed">Sub-second voice with concurrent workers. TTS begins synthesising while the LLM is still generating. No cloud latency.</p>
+            <div class="mt-auto pt-4 flex flex-wrap gap-2">
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Faster-Whisper</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Ollama Qwen3.5-4B</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Kokoro ONNX</span>
+            </div>
+        </div>
+        <!-- Card 2: Memory -->
+        <div class="glass-panel p-8 rounded-xl flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
+            <div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center border border-secondary/20 text-secondary mb-2 group-hover:bg-secondary/20 transition-colors">
+                <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">memory</span>
+            </div>
+            <h4 class="font-display text-xl font-bold text-white">Persistent Graph Memory</h4>
+            <p class="font-body text-white/60 text-sm leading-relaxed">SENTRI doesn't just respond — it remembers. Relationships, facts, and preferences are automatically extracted into a knowledge graph.</p>
+            <div class="mt-auto pt-4 flex flex-wrap gap-2">
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">SQLite Graph</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Auto-Extraction</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Context Injection</span>
+            </div>
+        </div>
+        <!-- Card 3: Tools -->
+        <div class="glass-panel p-8 rounded-xl flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
+            <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center border border-accent/20 text-accent mb-2 group-hover:bg-accent/20 transition-colors">
+                <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">build</span>
+            </div>
+            <h4 class="font-display text-xl font-bold text-white">Autonomous Tool Execution</h4>
+            <p class="font-body text-white/60 text-sm leading-relaxed">13 workspace tools the model invokes autonomously — filesystem, code intelligence, web search, and memory operations.</p>
+            <div class="mt-auto pt-4 flex flex-wrap gap-2">
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Filesystem</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Code Search</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Web Search</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Memory</span>
+            </div>
+        </div>
+        <!-- Card 4: HUD -->
+        <div class="glass-panel p-8 rounded-xl flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
+            <div class="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center border border-white/20 text-white mb-2 group-hover:bg-white/20 transition-colors">
+                <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">radar</span>
+            </div>
+            <h4 class="font-display text-xl font-bold text-white">Sci-Fi HUD Interface</h4>
+            <p class="font-body text-white/60 text-sm leading-relaxed">Immersive dashboard with orbital animations, particle fields, live system gauges, and reactive voice waveforms.</p>
+            <div class="mt-auto pt-4 flex flex-wrap gap-2">
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Next.js 15</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Tailwind</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">WebSockets</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">WebAudio</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tech Stack Pills -->
+    <div class="mt-16 flex flex-wrap justify-center gap-3 max-w-3xl opacity-60 fade-in">
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Python</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">FastAPI</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Next.js</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Tailwind</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Ollama</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Kokoro</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Whisper</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">WebSockets</span>
+    </div>
+</section>
+
+<!-- 4. ARCHITECTURE SECTION -->
+<section class="w-full max-w-5xl mx-auto px-4 py-24 flex flex-col items-center" id="architecture">
+    <div class="flex flex-col items-center mb-16 text-center fade-in">
+        <div class="inline-flex items-center px-3 py-1 rounded-full border border-primary/30 bg-primary/10 mb-4">
+            <span class="font-mono text-[10px] text-primary tracking-[0.2em] uppercase">System Design</span>
+        </div>
+        <h3 class="font-headline text-4xl md:text-5xl font-bold tracking-tight text-white glow-text">ARCHITECTURE</h3>
+        <p class="font-body text-white/50 mt-4 max-w-lg">Clean layers. Zero spaghetti. Outer layers depend on inner abstractions.</p>
+        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mt-6 opacity-50"></div>
+    </div>
+
+    <div class="glass-panel rounded-xl p-8 md:p-12 w-full overflow-x-auto fade-in">
+        <pre class="font-mono text-xs md:text-sm text-white/60 leading-relaxed">
+                    ┌─────────────────────────────────┐
+                    │       <span class="text-primary">Browser Client</span>           │
+                    │   Next.js · Tailwind · WebAudio  │
+                    └──────────┬──────────────────────┘
+                               │
+                  WebSocket (<span class="text-primary">PCM16 ↕ Audio + JSON</span>)
+                               │
+                    ┌──────────▼──────────────────────┐
+                    │       <span class="text-primary">WebSocket API</span>             │
+                    └──────────┬──────────────────────┘
+                               │
+                    ┌──────────▼──────────────────────┐
+                    │    <span class="text-secondary">Conversation Engine</span>          │
+                    │  ┌─────────┐ ┌──────────────┐   │
+                    │  │ Memory  │ │Prompt Builder │   │
+                    │  └─────────┘ └──────────────┘   │
+                    └──────────┬──────────────────────┘
+                               │
+       ┌───────────────────────▼────────────────────────┐
+       │       <span class="text-accent">Streaming Speech Pipeline</span>                │
+       │                                                │
+       │   ┌───────┐  ┌─────────┐  ┌───────────────┐   │
+       │   │ <span class="text-primary">ASR</span>   │  │<span class="text-secondary">Reasoning</span>│  │<span class="text-white/80">Speech Planner</span>│   │
+       │   │Whisper │  │ Ollama  │  │  (Chunker)    │   │
+       │   └───────┘  └────┬────┘  └───────────────┘   │
+       │                   │                            │
+       │             ┌─────▼─────┐  ┌──────────────┐   │
+       │             │  <span class="text-accent">Tools</span>   │  │    <span class="text-primary">TTS</span>      │   │
+       │             │ Registry  │  │   Kokoro     │   │
+       │             └───────────┘  └──────────────┘   │
+       └────────────────────────────────────────────────┘</pre>
+    </div>
+
+    <div class="mt-8 w-full glass-panel rounded-xl px-8 py-6 border-l-2 border-l-primary fade-in">
+        <p class="font-body text-white/60 text-sm">
+            <span class="text-primary font-bold">Provider Independence</span> — Every provider (ASR, Reasoning, TTS) is a standalone module with zero cross-dependencies. Swapping Faster-Whisper for Moonshine, or Kokoro for Piper, requires writing one driver file and touching nothing else.
+        </p>
+    </div>
+</section>
+
+<!-- 5. GETTING STARTED SECTION -->
+<section class="w-full max-w-4xl mx-auto px-4 py-24 flex flex-col items-center" id="get-started">
+    <div class="flex flex-col items-center mb-16 text-center fade-in">
+        <div class="inline-flex items-center px-3 py-1 rounded-full border border-accent/30 bg-accent/10 mb-4">
+            <span class="font-mono text-[10px] text-accent tracking-[0.2em] uppercase">Launch Sequence</span>
+        </div>
+        <h3 class="font-headline text-4xl md:text-5xl font-bold tracking-tight text-white glow-text">GET STARTED</h3>
+        <p class="font-body text-white/50 mt-4">Running in under 5 minutes. Python 3.10+ · Node.js 18+ · Ollama · CUDA GPU</p>
+        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mt-6 opacity-50"></div>
+    </div>
+
+    <div class="flex flex-col gap-6 w-full">
+        <!-- Step 1 -->
+        <div class="glass-panel rounded-xl p-8 flex gap-6 items-start fade-in">
+            <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center text-primary font-headline font-bold text-lg">1</div>
+            <div class="flex-1">
+                <h4 class="font-display text-lg font-bold text-white mb-2">Pull the reasoning model</h4>
+                <p class="font-body text-white/50 text-sm mb-4">Ollama downloads and manages the model weights automatically.</p>
+                <div class="bg-bgBase/80 border border-white/10 rounded-lg p-4 font-mono text-sm text-white/60 overflow-x-auto">
+                    <span class="text-primary">ollama pull</span> hf.co/HauhauCS/Qwen3.5-4B-Uncensored-HauhauCS-Aggressive:Q4_K_M
+                </div>
+            </div>
+        </div>
+        <!-- Step 2 -->
+        <div class="glass-panel rounded-xl p-8 flex gap-6 items-start fade-in">
+            <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center text-primary font-headline font-bold text-lg">2</div>
+            <div class="flex-1">
+                <h4 class="font-display text-lg font-bold text-white mb-2">Place the VAD model</h4>
+                <p class="font-body text-white/50 text-sm">Download <a href="https://github.com/snakers4/silero-vad" class="text-primary hover:underline">Silero VAD v5</a> and place <span class="font-mono text-primary bg-primary/10 px-1 rounded">silero_vad_v5.onnx</span> in <span class="font-mono text-white/50 bg-white/5 px-1 rounded">frontend/public/</span></p>
+            </div>
+        </div>
+        <!-- Step 3 -->
+        <div class="glass-panel rounded-xl p-8 flex gap-6 items-start fade-in">
+            <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center text-primary font-headline font-bold text-lg">3</div>
+            <div class="flex-1">
+                <h4 class="font-display text-lg font-bold text-white mb-2">Launch everything</h4>
+                <p class="font-body text-white/50 text-sm mb-4">One-click on Windows, or manual two-terminal setup.</p>
+                <div class="bg-bgBase/80 border border-white/10 rounded-lg p-4 font-mono text-sm text-white/60 overflow-x-auto leading-relaxed">
+<span class="text-white/30"># Option A: One-click (Windows)</span>
+<span class="text-primary">run_sentri.bat</span>
+
+<span class="text-white/30"># Option B: Manual</span>
+<span class="text-primary">cd</span> backend && .\venv\Scripts\activate
+<span class="text-primary">uvicorn</span> app.main:app --reload --port 8008
+
+<span class="text-white/30"># In a second terminal</span>
+<span class="text-primary">cd</span> frontend && <span class="text-primary">npm install</span> && <span class="text-primary">npm run dev</span> -- -p 3030
+                </div>
+            </div>
+        </div>
+        <!-- Step 4 -->
+        <div class="glass-panel rounded-xl p-8 flex gap-6 items-start fade-in">
+            <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center text-primary font-headline font-bold text-lg">4</div>
+            <div class="flex-1">
+                <h4 class="font-display text-lg font-bold text-white mb-2">Open the HUD</h4>
+                <p class="font-body text-white/50 text-sm">Navigate to <a href="http://localhost:3030" class="text-primary hover:underline">localhost:3030</a> and start talking to SENTRI. ASR and TTS models auto-download on first launch.</p>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- Capabilities -->
-<section id="capabilities">
-    <div class="container">
-        <div class="section-header fade-in">
-            <span class="section-label">Capabilities</span>
-            <h2>Four pillars. Zero cloud dependencies.</h2>
-            <p>Every component runs locally on consumer hardware.</p>
-        </div>
-
-        <div class="features-grid">
-            <div class="feature-card fade-in">
-                <span class="feature-icon">🎙️</span>
-                <h3>Real-Time Voice Pipeline</h3>
-                <p>Sub-second voice with concurrent workers. TTS begins synthesising while the LLM is still generating.</p>
-                <div class="feature-specs">
-                    <div class="spec-row"><span class="spec-key">ASR</span><span class="spec-val">Faster-Whisper · GPU · In-Process</span></div>
-                    <div class="spec-row"><span class="spec-key">LLM</span><span class="spec-val">Ollama · Qwen3.5-4B · Local</span></div>
-                    <div class="spec-row"><span class="spec-key">TTS</span><span class="spec-val">Kokoro ONNX · GPU · In-Process</span></div>
-                </div>
-            </div>
-
-            <div class="feature-card fade-in">
-                <span class="feature-icon">🧠</span>
-                <h3>Persistent Graph Memory</h3>
-                <p>Extracts and recalls facts about you across sessions. Sentri remembers what you said last week.</p>
-                <div class="feature-specs">
-                    <div class="spec-row"><span class="spec-key">Storage</span><span class="spec-val">SQLite graph · Semantic retrieval</span></div>
-                    <div class="spec-row"><span class="spec-key">Extract</span><span class="spec-val">Automatic from conversation</span></div>
-                    <div class="spec-row"><span class="spec-key">Recall</span><span class="spec-val">Injected into every turn</span></div>
-                </div>
-            </div>
-
-            <div class="feature-card fade-in">
-                <span class="feature-icon">🛠️</span>
-                <h3>Autonomous Tool Execution</h3>
-                <p>13 workspace tools the model invokes autonomously — files, code search, web, memory.</p>
-                <div class="feature-specs">
-                    <div class="spec-row"><span class="spec-key">Files</span><span class="spec-val">list · read · tree · search</span></div>
-                    <div class="spec-row"><span class="spec-key">Code</span><span class="spec-val">architecture · module · deps</span></div>
-                    <div class="spec-row"><span class="spec-key">Web</span><span class="spec-val">search · memory · open</span></div>
-                </div>
-            </div>
-
-            <div class="feature-card fade-in">
-                <span class="feature-icon">🪐</span>
-                <h3>Sci-Fi HUD Interface</h3>
-                <p>Immersive dashboard with orbital animations, particle fields, and live system monitoring.</p>
-                <div class="feature-specs">
-                    <div class="spec-row"><span class="spec-key">Gauges</span><span class="spec-val">CPU · RAM · Network · Disk</span></div>
-                    <div class="spec-row"><span class="spec-key">Visuals</span><span class="spec-val">Orbitals · Particles · Waveforms</span></div>
-                    <div class="spec-row"><span class="spec-key">Panels</span><span class="spec-val">Events · Voice · Chat</span></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="tech-strip fade-in">
-            <span class="tech-pill"><span class="tech-dot" style="background: #3776AB"></span> Python</span>
-            <span class="tech-pill"><span class="tech-dot" style="background: #009688"></span> FastAPI</span>
-            <span class="tech-pill"><span class="tech-dot" style="background: #fff"></span> Next.js</span>
-            <span class="tech-pill"><span class="tech-dot" style="background: #38B2AC"></span> Tailwind</span>
-            <span class="tech-pill"><span class="tech-dot" style="background: #FF6600"></span> Ollama</span>
-            <span class="tech-pill"><span class="tech-dot" style="background: var(--purple)"></span> Kokoro</span>
-            <span class="tech-pill"><span class="tech-dot" style="background: var(--green)"></span> Whisper</span>
-            <span class="tech-pill"><span class="tech-dot" style="background: var(--cyan)"></span> WebSockets</span>
-        </div>
-    </div>
-</section>
-
-<!-- Architecture -->
-<section id="architecture">
-    <div class="container">
-        <div class="section-header fade-in">
-            <span class="section-label">Architecture</span>
-            <h2>Clean layers. Zero spaghetti.</h2>
-            <p>Outer layers depend on inner abstractions. Inner layers never depend on outer implementations.</p>
-        </div>
-
-        <div class="arch-block fade-in">
-<pre>
-                        ┌─────────────────────────────────┐
-                        │        Browser Client           │
-                        │    Next.js · Tailwind · WebAudio│
-                        └──────────┬──────────────────────┘
-                                   │
-                      WebSocket (PCM16 ↕ Audio + JSON)
-                                   │
-                        ┌──────────▼──────────────────────┐
-                        │        WebSocket API            │
-                        └──────────┬──────────────────────┘
-                                   │
-                        ┌──────────▼──────────────────────┐
-                        │     Conversation Engine         │
-                        │  ┌─────────┐ ┌──────────────┐  │
-                        │  │ Memory  │ │Prompt Builder │  │
-                        │  └─────────┘ └──────────────┘  │
-                        └──────────┬──────────────────────┘
-                                   │
-           ┌───────────────────────▼────────────────────────┐
-           │          Streaming Speech Pipeline             │
-           │                                                │
-           │   ┌───────┐  ┌─────────┐  ┌───────────────┐   │
-           │   │  ASR  │  │Reasoning│  │Speech Planner │   │
-           │   │Whisper│  │ Ollama  │  │  (Chunker)    │   │
-           │   └───────┘  └────┬────┘  └───────────────┘   │
-           │                   │                            │
-           │             ┌─────▼─────┐  ┌──────────────┐   │
-           │             │   Tools   │  │     TTS      │   │
-           │             │ Registry  │  │   Kokoro     │   │
-           │             └───────────┘  └──────────────┘   │
-           └────────────────────────────────────────────────┘
-</pre>
-            <div class="arch-note">
-                <strong>Provider Independence</strong> — Every provider (ASR, Reasoning, TTS) is a standalone module with zero cross-dependencies. Swapping Faster-Whisper for Moonshine, or Kokoro for Piper, requires writing one driver file and touching nothing else.
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Getting Started -->
-<section id="start">
-    <div class="container">
-        <div class="section-header fade-in">
-            <span class="section-label">Get Started</span>
-            <h2>Running in under 5 minutes.</h2>
-            <p>Python 3.10+ · Node.js 18+ · Ollama · CUDA GPU (recommended)</p>
-        </div>
-
-        <div class="steps">
-            <div class="step fade-in">
-                <div class="step-number">1</div>
-                <div class="step-content">
-                    <h3>Pull the reasoning model</h3>
-                    <p>Ollama downloads and manages the model weights automatically.</p>
-                    <div class="code-block">
-                        <span class="cmd">ollama pull</span> hf.co/HauhauCS/Qwen3.5-4B-Uncensored-HauhauCS-Aggressive:Q4_K_M
-                    </div>
-                </div>
-            </div>
-
-            <div class="step fade-in">
-                <div class="step-number">2</div>
-                <div class="step-content">
-                    <h3>Place the VAD model</h3>
-                    <p>Download <a href="https://github.com/snakers4/silero-vad" style="color: var(--cyan)">Silero VAD v5</a> and place <code style="color: var(--cyan); background: rgba(0,212,255,0.08); padding: 2px 6px; border-radius: 4px;">silero_vad_v5.onnx</code> in <code style="color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">frontend/public/</code></p>
-                </div>
-            </div>
-
-            <div class="step fade-in">
-                <div class="step-number">3</div>
-                <div class="step-content">
-                    <h3>Launch everything</h3>
-                    <p>One-click on Windows, or manual two-terminal setup.</p>
-                    <div class="code-block">
-<span class="comment"># Option A: One-click (Windows)</span>
-<span class="cmd">run_sentri.bat</span>
-
-<span class="comment"># Option B: Manual</span>
-<span class="cmd">cd</span> backend && .\venv\Scripts\activate
-<span class="cmd">pip install</span> -r requirements.txt
-<span class="cmd">uvicorn</span> app.main:app --reload --port 8008
-
-<span class="comment"># In a second terminal:</span>
-<span class="cmd">cd</span> frontend && <span class="cmd">npm install</span> && <span class="cmd">npm run dev</span> -- -p 3030
-                    </div>
-                </div>
-            </div>
-
-            <div class="step fade-in">
-                <div class="step-number">4</div>
-                <div class="step-content">
-                    <h3>Open the HUD</h3>
-                    <p>Navigate to <a href="http://localhost:3030" style="color: var(--cyan)">localhost:3030</a> and start talking to SENTRI. ASR and TTS models auto-download on first launch.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+</main>
 
 <!-- Footer -->
-<footer>
-    <div class="container">
-        <a href="https://github.com/NeuralNinja23" target="_blank">NeuralNinja23</a>
-        <p>Built with obsession. Runs with purpose.</p>
-        <p class="tagline">Someone Everyone Needs To Remember.</p>
-    </div>
+<footer class="w-full flex flex-col items-center gap-4 text-center px-4 bg-[#050508] py-16 border-t border-[#7c3aed]/20">
+    <div class="font-headline font-bold text-[#00d4ff] text-xl tracking-wider mb-2">S.E.N.T.R.I</div>
+    <p class="font-body text-sm text-white/50">Built with obsession by <a href="https://github.com/NeuralNinja23" class="text-primary hover:underline" target="_blank">NeuralNinja23</a></p>
+    <p class="font-body text-sm text-white/30 italic">Someone Everyone Needs To Remember.</p>
 </footer>
 
+<!-- Scroll Animations -->
 <script>
-// ─── Particle Background ───
-const canvas = document.getElementById('particles');
-const ctx = canvas.getContext('2d');
-let particles = [];
-const PARTICLE_COUNT = 80;
-
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-
-function createParticles() {
-    particles = [];
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-        particles.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * 0.3,
-            vy: (Math.random() - 0.5) * 0.3,
-            r: Math.random() * 1.5 + 0.5,
-            alpha: Math.random() * 0.4 + 0.1
-        });
-    }
-}
-
-function drawParticles() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 212, 255, ${p.alpha})`;
-        ctx.fill();
-
-        // Draw connections
-        for (let j = i + 1; j < particles.length; j++) {
-            const p2 = particles[j];
-            const dx = p.x - p2.x;
-            const dy = p.y - p2.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 120) {
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.strokeStyle = `rgba(0, 212, 255, ${0.06 * (1 - dist / 120)})`;
-                ctx.lineWidth = 0.5;
-                ctx.stroke();
-            }
-        }
-    }
-
-    requestAnimationFrame(drawParticles);
-}
-
-window.addEventListener('resize', () => { resize(); createParticles(); });
-resize();
-createParticles();
-drawParticles();
-
-// ─── Scroll Animations ───
 const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-        }
-    });
+    entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
 }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 </script>
 
-</body>
-</html>
+</body></html>
