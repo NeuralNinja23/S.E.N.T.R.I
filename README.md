@@ -16,7 +16,7 @@
 <table>
 <tr>
 <td>
-<strong>A fully local, real-time voice AI companion with persistent memory,<br>autonomous tool execution, and a sci-fi HUD interface —<br>running entirely on your own hardware.</strong>
+<strong>A fully local, real-time Digital Human with persistent memory,<br>autonomous tool execution, and a HUD interface —<br>running entirely on your own hardware.</strong>
 </td>
 </tr>
 </table>
@@ -52,7 +52,7 @@
 <h2 align="center">What is S.E.N.T.R.I?</h2>
 
 <p align="center">
-SENTRI is not a chatbot. It's a <strong>personal AI operating system</strong> — a digital companion<br>
+SENTRI is not a chatbot. It's a <strong>personal Digital Human</strong> — a digital companion<br>
 that listens, speaks, remembers, and acts. Every component runs locally.<br>
 No cloud APIs. No telemetry. No data leaves your machine.
 </p>

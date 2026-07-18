@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S.E.N.T.R.I — Someone Everyone Needs To Remember</title>
+    <meta name="description" content="A fully local, real-time voice AI companion with persistent memory, autonomous tool execution, and a sci-fi HUD interface.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #050508;
+            --surface: #0d0d14;
+            --border: rgba(100, 200, 255, 0.08);
+            --border-hover: rgba(100, 200, 255, 0.2);
+            --cyan: #00d4ff;
+            --purple: #7c3aed;
+            --green: #22c55e;
+            --pink: #f43f5e;
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+            --glass: rgba(13, 13, 20, 0.6);
+            --glass-border: rgba(100, 200, 255, 0.1);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.7;
+        }
+
+        /* ─── Canvas Background ─── */
+        #particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ─── Radial Glow ─── */
+        .glow-top {
+            position: fixed;
+            top: -40vh; left: 50%;
+            transform: translateX(-50%);
+            width: 120vw; height: 80vh;
+            background: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.06) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ─── Layout ─── */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        section {
+            padding: 100px 0;
+        }
+
+        /* ─── Navigation ─── */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 16px 0;
+            backdrop-filter: blur(20px);
+            background: rgba(5, 5, 8, 0.8);
+            border-bottom: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            color: var(--cyan);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--cyan); }
+
+        /* ─── Hero ─── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 80px;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            color: var(--cyan);
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            background: rgba(0, 212, 255, 0.04);
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            background: linear-gradient(135deg, var(--cyan) 0%, #a78bfa 50%, var(--cyan) 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 4s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--text-dim);
+            letter-spacing: 0.2em;
+            font-weight: 300;
+            margin-bottom: 48px;
+        }
+
+        .hero-description {
+            max-width: 620px;
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: var(--text);
+            font-weight: 300;
+            margin-bottom: 48px;
+        }
+
+        .hero-description strong {
+            color: var(--cyan);
+            font-weight: 500;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            border: none;
+            letter-spacing: 0.03em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--cyan), #0ea5e9);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--border-hover);
+            background: rgba(100, 200, 255, 0.04);
+        }
+
+        /* ─── Screenshot ─── */
+        .screenshot-section {
+            padding: 0 0 80px;
+        }
+
+        .screenshot-wrapper {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 80px rgba(0, 212, 255, 0.06), 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .screenshot-wrapper img {
+            width: 100%;
+            display: block;
+        }
+
+        .screenshot-glow {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 60%, var(--bg) 100%);
+            pointer-events: none;
+        }
+
+        /* ─── Section Headers ─── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .section-label {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--cyan);
+            margin-bottom: 16px;
+            padding: 4px 12px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .section-header h2 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            color: var(--text-dim);
+            max-width: 550px;
+            margin: 0 auto;
+            font-size: 1.05rem;
+        }
+
+        /* ─── Feature Cards ─── */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 36px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card:hover::before { opacity: 1; }
+
+        .feature-icon {
+            font-size: 1.8rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: var(--text-dim);
+            font-size: 0.92rem;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .feature-specs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .spec-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+        }
+
+        .spec-key {
+            background: rgba(0, 212, 255, 0.08);
+            color: var(--cyan);
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            font-size: 0.75rem;
+            min-width: 72px;
+            text-align: center;
+        }
+
+        .spec-val {
+            color: var(--text-dim);
+        }
+
+        .feature-card:nth-child(2) .spec-key { background: rgba(124, 58, 237, 0.12); color: var(--purple); }
+        .feature-card:nth-child(3) .spec-key { background: rgba(34, 197, 94, 0.1); color: var(--green); }
+        .feature-card:nth-child(4) .spec-key { background: rgba(244, 63, 94, 0.1); color: var(--pink); }
+
+        /* ─── Architecture ─── */
+        .arch-block {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 48px;
+            overflow-x: auto;
+        }
+
+        .arch-block pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.8;
+            color: var(--text-dim);
+            overflow-x: auto;
+        }
+
+        .arch-note {
+            margin-top: 32px;
+            padding: 20px 24px;
+            border-left: 2px solid var(--cyan);
+            background: rgba(0, 212, 255, 0.03);
+            border-radius: 0 8px 8px 0;
+            font-size: 0.92rem;
+            color: var(--text-dim);
+        }
+
+        .arch-note strong { color: var(--cyan); }
+
+        /* ─── Getting Started ─── */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .step {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 32px 36px;
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            transition: all 0.3s ease;
+        }
+
+        .step:hover {
+            border-color: var(--border-hover);
+        }
+
+        .step-number {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(124, 58, 237, 0.15));
+            color: var(--cyan);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .step-content h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step-content p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .code-block {
+            background: #0a0a12;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.7;
+            color: var(--text-dim);
+            overflow-x: auto;
+        }
+
+        .code-block .cmd { color: var(--cyan); }
+        .code-block .comment { color: #4a5568; }
+
+        /* ─── Tech Stack ─── */
+        .tech-strip {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .tech-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+
+        .tech-pill:hover {
+            border-color: var(--border-hover);
+            color: var(--text);
+        }
+
+        .tech-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* ─── Footer ─── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 48px 0;
+            text-align: center;
+        }
+
+        footer a {
+            color: var(--cyan);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        footer p {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+
+        footer .tagline {
+            font-style: italic;
+            color: #475569;
+            font-size: 0.8rem;
+            margin-top: 16px;
+        }
+
+        /* ─── Scroll Animations ─── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .features-grid { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+            .hero h1 { letter-spacing: 0.1em; }
+            .hero-subtitle { letter-spacing: 0.1em; font-size: 0.85rem; }
+            section { padding: 64px 0; }
+            .arch-block { padding: 24px; }
+            .step { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+<div class="glow-top"></div>
+
+<!-- Navigation -->
+<nav>
+    <div class="container">
+        <a href="#" class="nav-logo">S.E.N.T.R.I</a>
+        <ul class="nav-links">
+            <li><a href="#capabilities">Capabilities</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#start">Get Started</a></li>
+            <li><a href="https://github.com/NeuralNinja23/S.E.N.T.R.I" target="_blank">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container">
+        <span class="hero-badge">v2.0.1 — PERSISTENT MEMORY</span>
+        <h1>S.E.N.T.R.I</h1>
+        <p class="hero-subtitle">SOMEONE EVERYONE NEEDS TO REMEMBER</p>
+        <p class="hero-description">
+            A <strong>personal AI operating system</strong> that listens, speaks, remembers, and acts.
+            Real-time voice. Persistent memory. Autonomous tools.
+            Running entirely on your own hardware — no cloud, no telemetry, no compromises.
+        </p>
+        <div class="hero-cta">
+            <a href="#start" class="btn btn-primary">Get Started →</a>
+            <a href="https://github.com/NeuralNinja23/S.E.N.T.R.I" class="btn btn-ghost" target="_blank">View Source</a>
+        </div>
+    </div>
+</section>
+
+<!-- Screenshot -->
+<section class="screenshot-section">
+    <div class="container">
+        <div class="screenshot-wrapper fade-in">
+            <img src="ui.png" alt="SENTRI HUD Dashboard" />
+            <div class="screenshot-glow"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Capabilities -->
+<section id="capabilities">
+    <div class="container">
+        <div class="section-header fade-in">
+            <span class="section-label">Capabilities</span>
+            <h2>Four pillars. Zero cloud dependencies.</h2>
+            <p>Every component runs locally on consumer hardware.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card fade-in">
+                <span class="feature-icon">🎙️</span>
+                <h3>Real-Time Voice Pipeline</h3>
+                <p>Sub-second voice with concurrent workers. TTS begins synthesising while the LLM is still generating.</p>
+                <div class="feature-specs">
+                    <div class="spec-row"><span class="spec-key">ASR</span><span class="spec-val">Faster-Whisper · GPU · In-Process</span></div>
+                    <div class="spec-row"><span class="spec-key">LLM</span><span class="spec-val">Ollama · Qwen3.5-4B · Local</span></div>
+                    <div class="spec-row"><span class="spec-key">TTS</span><span class="spec-val">Kokoro ONNX · GPU · In-Process</span></div>
+                </div>
+            </div>
+
+            <div class="feature-card fade-in">
+                <span class="feature-icon">🧠</span>
+                <h3>Persistent Graph Memory</h3>
+                <p>Extracts and recalls facts about you across sessions. Sentri remembers what you said last week.</p>
+                <div class="feature-specs">
+                    <div class="spec-row"><span class="spec-key">Storage</span><span class="spec-val">SQLite graph · Semantic retrieval</span></div>
+                    <div class="spec-row"><span class="spec-key">Extract</span><span class="spec-val">Automatic from conversation</span></div>
+                    <div class="spec-row"><span class="spec-key">Recall</span><span class="spec-val">Injected into every turn</span></div>
+                </div>
+            </div>
+
+            <div class="feature-card fade-in">
+                <span class="feature-icon">🛠️</span>
+                <h3>Autonomous Tool Execution</h3>
+                <p>13 workspace tools the model invokes autonomously — files, code search, web, memory.</p>
+                <div class="feature-specs">
+                    <div class="spec-row"><span class="spec-key">Files</span><span class="spec-val">list · read · tree · search</span></div>
+                    <div class="spec-row"><span class="spec-key">Code</span><span class="spec-val">architecture · module · deps</span></div>
+                    <div class="spec-row"><span class="spec-key">Web</span><span class="spec-val">search · memory · open</span></div>
+                </div>
+            </div>
+
+            <div class="feature-card fade-in">
+                <span class="feature-icon">🪐</span>
+                <h3>Sci-Fi HUD Interface</h3>
+                <p>Immersive dashboard with orbital animations, particle fields, and live system monitoring.</p>
+                <div class="feature-specs">
+                    <div class="spec-row"><span class="spec-key">Gauges</span><span class="spec-val">CPU · RAM · Network · Disk</span></div>
+                    <div class="spec-row"><span class="spec-key">Visuals</span><span class="spec-val">Orbitals · Particles · Waveforms</span></div>
+                    <div class="spec-row"><span class="spec-key">Panels</span><span class="spec-val">Events · Voice · Chat</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-strip fade-in">
+            <span class="tech-pill"><span class="tech-dot" style="background: #3776AB"></span> Python</span>
+            <span class="tech-pill"><span class="tech-dot" style="background: #009688"></span> FastAPI</span>
+            <span class="tech-pill"><span class="tech-dot" style="background: #fff"></span> Next.js</span>
+            <span class="tech-pill"><span class="tech-dot" style="background: #38B2AC"></span> Tailwind</span>
+            <span class="tech-pill"><span class="tech-dot" style="background: #FF6600"></span> Ollama</span>
+            <span class="tech-pill"><span class="tech-dot" style="background: var(--purple)"></span> Kokoro</span>
+            <span class="tech-pill"><span class="tech-dot" style="background: var(--green)"></span> Whisper</span>
+            <span class="tech-pill"><span class="tech-dot" style="background: var(--cyan)"></span> WebSockets</span>
+        </div>
+    </div>
+</section>
+
+<!-- Architecture -->
+<section id="architecture">
+    <div class="container">
+        <div class="section-header fade-in">
+            <span class="section-label">Architecture</span>
+            <h2>Clean layers. Zero spaghetti.</h2>
+            <p>Outer layers depend on inner abstractions. Inner layers never depend on outer implementations.</p>
+        </div>
+
+        <div class="arch-block fade-in">
+<pre>
+                        ┌─────────────────────────────────┐
+                        │        Browser Client           │
+                        │    Next.js · Tailwind · WebAudio│
+                        └──────────┬──────────────────────┘
+                                   │
+                      WebSocket (PCM16 ↕ Audio + JSON)
+                                   │
+                        ┌──────────▼──────────────────────┐
+                        │        WebSocket API            │
+                        └──────────┬──────────────────────┘
+                                   │
+                        ┌──────────▼──────────────────────┐
+                        │     Conversation Engine         │
+                        │  ┌─────────┐ ┌──────────────┐  │
+                        │  │ Memory  │ │Prompt Builder │  │
+                        │  └─────────┘ └──────────────┘  │
+                        └──────────┬──────────────────────┘
+                                   │
+           ┌───────────────────────▼────────────────────────┐
+           │          Streaming Speech Pipeline             │
+           │                                                │
+           │   ┌───────┐  ┌─────────┐  ┌───────────────┐   │
+           │   │  ASR  │  │Reasoning│  │Speech Planner │   │
+           │   │Whisper│  │ Ollama  │  │  (Chunker)    │   │
+           │   └───────┘  └────┬────┘  └───────────────┘   │
+           │                   │                            │
+           │             ┌─────▼─────┐  ┌──────────────┐   │
+           │             │   Tools   │  │     TTS      │   │
+           │             │ Registry  │  │   Kokoro     │   │
+           │             └───────────┘  └──────────────┘   │
+           └────────────────────────────────────────────────┘
+</pre>
+            <div class="arch-note">
+                <strong>Provider Independence</strong> — Every provider (ASR, Reasoning, TTS) is a standalone module with zero cross-dependencies. Swapping Faster-Whisper for Moonshine, or Kokoro for Piper, requires writing one driver file and touching nothing else.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Getting Started -->
+<section id="start">
+    <div class="container">
+        <div class="section-header fade-in">
+            <span class="section-label">Get Started</span>
+            <h2>Running in under 5 minutes.</h2>
+            <p>Python 3.10+ · Node.js 18+ · Ollama · CUDA GPU (recommended)</p>
+        </div>
+
+        <div class="steps">
+            <div class="step fade-in">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Pull the reasoning model</h3>
+                    <p>Ollama downloads and manages the model weights automatically.</p>
+                    <div class="code-block">
+                        <span class="cmd">ollama pull</span> hf.co/HauhauCS/Qwen3.5-4B-Uncensored-HauhauCS-Aggressive:Q4_K_M
+                    </div>
+                </div>
+            </div>
+
+            <div class="step fade-in">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Place the VAD model</h3>
+                    <p>Download <a href="https://github.com/snakers4/silero-vad" style="color: var(--cyan)">Silero VAD v5</a> and place <code style="color: var(--cyan); background: rgba(0,212,255,0.08); padding: 2px 6px; border-radius: 4px;">silero_vad_v5.onnx</code> in <code style="color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">frontend/public/</code></p>
+                </div>
+            </div>
+
+            <div class="step fade-in">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Launch everything</h3>
+                    <p>One-click on Windows, or manual two-terminal setup.</p>
+                    <div class="code-block">
+<span class="comment"># Option A: One-click (Windows)</span>
+<span class="cmd">run_sentri.bat</span>
+
+<span class="comment"># Option B: Manual</span>
+<span class="cmd">cd</span> backend && .\venv\Scripts\activate
+<span class="cmd">pip install</span> -r requirements.txt
+<span class="cmd">uvicorn</span> app.main:app --reload --port 8008
+
+<span class="comment"># In a second terminal:</span>
+<span class="cmd">cd</span> frontend && <span class="cmd">npm install</span> && <span class="cmd">npm run dev</span> -- -p 3030
+                    </div>
+                </div>
+            </div>
+
+            <div class="step fade-in">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Open the HUD</h3>
+                    <p>Navigate to <a href="http://localhost:3030" style="color: var(--cyan)">localhost:3030</a> and start talking to SENTRI. ASR and TTS models auto-download on first launch.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <a href="https://github.com/NeuralNinja23" target="_blank">NeuralNinja23</a>
+        <p>Built with obsession. Runs with purpose.</p>
+        <p class="tagline">Someone Everyone Needs To Remember.</p>
+    </div>
+</footer>
+
+<script>
+// ─── Particle Background ───
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let particles = [];
+const PARTICLE_COUNT = 80;
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: (Math.random() - 0.5) * 0.3,
+            r: Math.random() * 1.5 + 0.5,
+            alpha: Math.random() * 0.4 + 0.1
+        });
+    }
+}
+
+function drawParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0, 212, 255, ${p.alpha})`;
+        ctx.fill();
+
+        // Draw connections
+        for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 120) {
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.strokeStyle = `rgba(0, 212, 255, ${0.06 * (1 - dist / 120)})`;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            }
+        }
+    }
+
+    requestAnimationFrame(drawParticles);
+}
+
+window.addEventListener('resize', () => { resize(); createParticles(); });
+resize();
+createParticles();
+drawParticles();
+
+// ─── Scroll Animations ───
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
