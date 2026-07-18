@@ -1,761 +1,453 @@
 <!DOCTYPE html>
-<html class="scroll-smooth" lang="en">
-
-<head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>S.E.N.T.R.I — Digital Human</title>
-    <meta name="description"
-        content="A fully local, real-time voice digital human with persistent memory, autonomous tool execution, and a sci-fi HUD interface.">
-
-    <link href="https://fonts.googleapis.com" rel="preconnect" />
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet" />
-
-    <style>
-        :root {
-            --void: #07090a;
-            --panel: #0d1210;
-            --panel-line: rgba(57, 255, 106, 0.14);
-            --phosphor: #39ff6a;
-            --phosphor-dim: #1f8f43;
-            --amber: #ffb020;
-            --steel: #9aa8a3;
-            --steel-dim: #5c6663;
-            --paper: #eef3ef;
+<html class="dark scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S.E.N.T.R.I — Digital Human</title>
+<meta name="description" content="A fully local, real-time voice digital human with persistent memory, autonomous tool execution, and a sci-fi HUD interface.">
+<!-- Tailwind CSS & Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00d4ff',
+                        secondary: '#7c3aed',
+                        accent: '#22c55e',
+                        bgBase: '#050508'
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Public Sans", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    }
+                }
+            }
         }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        html,
+    </script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Public+Sans:wght@500&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
         body {
-            background: var(--void);
-            color: var(--paper);
+            background-color: #050508;
+            color: white;
             font-family: 'Inter', sans-serif;
-            margin: 0;
-            -webkit-font-smoothing: antialiased;
         }
-
-        ::selection {
-            background: rgba(57, 255, 106, 0.28);
-            color: #fff;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--void);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(57, 255, 106, 0.25);
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(57, 255, 106, 0.45);
-        }
-
-        .font-display {
-            font-family: 'Big Shoulders Display', sans-serif;
-        }
-
-        .font-mono {
-            font-family: 'IBM Plex Mono', monospace;
-        }
-
+        
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
-
-        /* ---- scanlines + vignette, applied globally, very subtle ---- */
-        .crt-overlay {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 40;
-            mix-blend-mode: overlay;
-            opacity: 0.5;
-            background: repeating-linear-gradient(to bottom,
-                    rgba(255, 255, 255, 0.028) 0px,
-                    rgba(255, 255, 255, 0.028) 1px,
-                    transparent 1px,
-                    transparent 3px);
+        
+        .glass-panel {
+            background: rgba(5, 5, 8, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 212, 255, 0.1);
         }
-
-        .vignette {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 39;
-            background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
-        }
-
-        /* ---- HUD corner-bracket panel ---- */
-        .hud-panel {
-            position: relative;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%), var(--panel);
-            border: 1px solid var(--panel-line);
-        }
-
-        .hud-panel::before,
-        .hud-panel::after,
-        .hud-panel .br-tr,
-        .hud-panel .br-bl {
-            content: "";
-            position: absolute;
-            width: 14px;
-            height: 14px;
-            border-color: var(--phosphor);
-            opacity: 0.55;
-        }
-
-        .hud-panel::before {
-            top: -1px;
-            left: -1px;
-            border-top: 2px solid;
-            border-left: 2px solid;
-        }
-
-        .hud-panel::after {
-            bottom: -1px;
-            right: -1px;
-            border-bottom: 2px solid;
-            border-right: 2px solid;
-        }
-
-        .hud-panel .br-tr {
-            top: -1px;
-            right: -1px;
-            border-top: 2px solid var(--phosphor);
-            border-right: 2px solid var(--phosphor);
-        }
-
-        .hud-panel .br-bl {
-            bottom: -1px;
-            left: -1px;
-            border-bottom: 2px solid var(--phosphor);
-            border-left: 2px solid var(--phosphor);
-        }
-
+        
         .glow-text {
-            text-shadow: 0 0 24px rgba(57, 255, 106, 0.35);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
         }
+        
+        .glow-sm {
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+        
+        .hover\:glow-sm:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .text-shimmer {
+            background-size: 200% auto;
+            animation: shimmer 4s linear infinite;
+        }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050508; }
+        ::-webkit-scrollbar-thumb { background: rgba(124, 58, 237, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 212, 255, 0.5); }
 
-        .glow-amber {
-            text-shadow: 0 0 20px rgba(255, 176, 32, 0.35);
-        }
-
-        .tab-nums {
-            font-variant-numeric: tabular-nums;
-        }
-
-        .fade-in {
-            opacity: 0;
-            transform: translateY(24px);
-            transition: opacity .7s ease, transform .7s ease;
-        }
-
-        .fade-in.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .sweep-btn {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .sweep-btn::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(100deg, transparent 40%, rgba(255, 255, 255, 0.35) 50%, transparent 60%);
-            transform: translateX(-120%);
-            transition: transform .6s ease;
-        }
-
-        .sweep-btn:hover::after {
-            transform: translateX(120%);
-        }
-
-        .divider-line {
-            height: 1px;
-            background: linear-gradient(to right, transparent, var(--phosphor-dim), transparent);
-            opacity: 0.6;
-        }
-
-        #hero-canvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+        /* Scroll fade-in */
+        .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
     </style>
 </head>
+<body class="relative min-h-screen selection:bg-primary/30 selection:text-white antialiased">
 
-<body class="relative min-h-screen antialiased">
+<!-- WebGL Shader Background -->
+<div class="fixed inset-0 w-full h-full z-[-1] opacity-60 pointer-events-none" style="display:block;">
+<canvas id="shader-canvas" style="display:block;width:100%;height:100%"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas');
+  function syncSize() {
+    const w = canvas.clientWidth || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  }
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(syncSize).observe(canvas);
+  syncSize();
 
-    <div class="crt-overlay"></div>
-    <div class="vignette"></div>
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+void main() { gl_Position = vec4(a_position, 0.0, 1.0); }`;
+  const fs = `precision highp float;
+uniform float u_time;
+uniform vec2 u_resolution;
+void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+    vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+    float dist = length(p - vec2(0.0, 1.5));
+    vec3 glowColor = vec3(0.0, 0.4, 0.5);
+    float glow = 0.5 / (dist + 0.5);
+    glow *= 0.5 + 0.2 * sin(u_time * 0.5);
+    vec2 grid = fract(uv * 20.0);
+    float lines = smoothstep(0.0, 0.02, grid.x) * smoothstep(1.0, 0.98, grid.x) + 
+                  smoothstep(0.0, 0.02, grid.y) * smoothstep(1.0, 0.98, grid.y);
+    vec3 gridColor = vec3(0.0, 0.8, 1.0) * lines * 0.05;
+    float particles = 0.0;
+    for(float i = 0.0; i < 20.0; i++) {
+        vec2 pos = vec2(sin(u_time * 0.2 + i * 1.5), cos(u_time * 0.3 + i * 2.1));
+        particles += 0.001 / length(p - pos);
+    }
+    vec3 color = vec3(0.02, 0.02, 0.03);
+    color += glowColor * glow;
+    color += gridColor;
+    color += vec3(0.0, 0.8, 1.0) * particles;
+    gl_FragColor = vec4(color, 1.0);
+}`;
+  function cs(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
 
-    <!-- ============ NAV ============ -->
-    <nav
-        class="fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-10 py-4 bg-[#07090a]/85 backdrop-blur-md border-b border-[color:var(--panel-line)]">
-        <a href="#"
-            class="font-display font-bold text-2xl tracking-tight text-[color:var(--paper)] no-underline flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full inline-block"
-                style="background:var(--phosphor); box-shadow:0 0 8px var(--phosphor);"></span>
+<!-- Navigation -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 py-4 bg-[#050508]/80 backdrop-blur-md font-headline uppercase tracking-widest border-b border-[#00d4ff]/20 shadow-[0_0_15px_rgba(0,212,255,0.1)]">
+    <a href="#" class="font-headline font-bold text-2xl tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-[#00d4ff] to-[#7c3aed] hover:scale-105 transition-all duration-200 no-underline">
+        S.E.N.T.R.I
+    </a>
+    <div class="hidden md:flex items-center gap-8">
+        <a class="text-white/70 hover:text-[#00d4ff] transition-colors text-sm no-underline" href="#capabilities">Capabilities</a>
+        <a class="text-white/70 hover:text-[#00d4ff] transition-colors text-sm no-underline" href="#architecture">Architecture</a>
+        <a class="text-white/70 hover:text-[#00d4ff] transition-colors text-sm no-underline" href="#get-started">Get Started</a>
+        <a class="text-white/70 hover:text-[#00d4ff] transition-colors text-sm no-underline" href="https://github.com/NeuralNinja23/S.E.N.T.R.I" target="_blank">GitHub ↗</a>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="relative pt-24 pb-16 z-10 flex flex-col items-center">
+
+<!-- 1. HERO SECTION -->
+<section class="w-full min-h-[90vh] flex flex-col items-center justify-center text-center px-4 relative">
+    <!-- Decorative Orbitals -->
+    <div class="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+        <div class="w-[600px] h-[600px] rounded-full border-[0.5px] border-primary animate-[spin_60s_linear_infinite]"></div>
+        <div class="w-[800px] h-[800px] rounded-full border-[0.5px] border-secondary absolute animate-[spin_90s_linear_infinite_reverse]"></div>
+    </div>
+    <div class="z-10 max-w-4xl mx-auto flex flex-col items-center gap-6">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-sm">
+            <span class="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_theme('colors.accent')]"></span>
+            <span class="font-mono text-xs text-primary/90 tracking-widest uppercase">v2.0.1 — PERSISTENT MEMORY</span>
+        </div>
+        <h1 class="font-headline font-extrabold text-7xl md:text-9xl tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-primary via-white to-secondary text-shimmer glow-text">
             S.E.N.T.R.I
-        </a>
-        <div class="hidden md:flex items-center gap-8 font-mono text-xs tracking-widest uppercase">
-            <a class="text-[color:var(--steel)] hover:text-[color:var(--phosphor)] transition-colors no-underline"
-                href="#capabilities">Capabilities</a>
-            <a class="text-[color:var(--steel)] hover:text-[color:var(--phosphor)] transition-colors no-underline"
-                href="#architecture">Architecture</a>
-            <a class="text-[color:var(--steel)] hover:text-[color:var(--phosphor)] transition-colors no-underline"
-                href="#get-started">Get Started</a>
-            <a class="text-[color:var(--steel)] hover:text-[color:var(--phosphor)] transition-colors no-underline flex items-center gap-1"
-                href="https://github.com/NeuralNinja23/S.E.N.T.R.I" target="_blank">GitHub <span
-                    aria-hidden="true">↗</span></a>
+        </h1>
+        <h2 class="font-display text-2xl md:text-3xl text-white/80 font-medium tracking-wide">
+            Someone Everyone Needs To Remember
+        </h2>
+        <p class="font-body text-lg md:text-xl text-white/50 max-w-2xl mt-4 leading-relaxed">
+            A <strong>digital human</strong> that listens, speaks, remembers, and acts.
+            Real-time voice. Persistent memory. Autonomous tools.
+            Running entirely on your own hardware — no cloud, no telemetry, no compromises.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 mt-10">
+            <a href="#get-started" class="px-8 py-4 rounded-lg bg-gradient-to-r from-primary to-blue-600 text-bgBase font-headline font-bold text-lg hover:scale-105 hover:shadow-[0_0_30px_rgba(0,212,255,0.4)] transition-all flex items-center gap-2 group no-underline">
+                Get Started
+                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </a>
+            <a href="https://github.com/NeuralNinja23/S.E.N.T.R.I" target="_blank" class="px-8 py-4 rounded-lg border border-white/20 bg-white/5 backdrop-blur-md text-white font-headline font-bold text-lg hover:bg-white/10 hover:border-white/40 transition-all flex items-center gap-2 group no-underline">
+                <span class="material-symbols-outlined text-white/70 group-hover:text-white transition-colors">code</span>
+                View Source
+            </a>
         </div>
-    </nav>
+    </div>
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-10 flex flex-col items-center gap-2 text-white/30 animate-bounce">
+        <span class="font-label text-xs uppercase tracking-widest">Explore</span>
+        <span class="material-symbols-outlined">expand_more</span>
+    </div>
+</section>
 
-    <main class="relative pt-24 pb-24 z-10 flex flex-col items-center">
-
-        <!-- ============ HERO ============ -->
-        <section
-            class="w-full min-h-[92vh] flex flex-col items-center justify-center text-center px-4 relative overflow-hidden">
-            <canvas id="hero-canvas"></canvas>
-
-            <div class="z-10 max-w-4xl mx-auto flex flex-col items-center gap-6 px-4 pointer-events-none">
-                <div
-                    class="inline-flex items-center gap-2 px-4 py-1.5 border border-[color:var(--panel-line)] bg-black/40 backdrop-blur-sm font-mono">
-                    <span class="w-1.5 h-1.5 rounded-full"
-                        style="background:var(--phosphor); box-shadow:0 0 6px var(--phosphor); animation:pulse 2s ease-in-out infinite;"></span>
-                    <span class="text-[11px] tracking-[0.25em] uppercase" style="color:var(--phosphor);">v2.0.1 //
-                        Persistent Memory Online</span>
-                </div>
-
-                <h1
-                    class="font-display font-black text-7xl md:text-[9rem] leading-[0.85] tracking-tight text-[color:var(--paper)] glow-text uppercase">
-                    S.E.N.T.R.I
-                </h1>
-                <h2 class="font-mono text-sm md:text-base text-[color:var(--phosphor)] tracking-[0.35em] uppercase">
-                    Someone Everyone Needs To Remember
-                </h2>
-                <p class="font-body text-base md:text-lg text-[color:var(--steel)] max-w-xl mt-2 leading-relaxed">
-                    A <strong>digital human</strong> that listens, speaks, remembers, and acts.
-                    Real-time voice. Persistent memory. Autonomous tools.
-                    Running entirely on your own hardware — no cloud, no telemetry, no compromises.
-                </p>
-
-                <div class="flex flex-col sm:flex-row gap-4 mt-8 pointer-events-auto">
-                    <a href="#get-started"
-                        class="sweep-btn px-8 py-4 font-display font-bold text-lg uppercase tracking-wide no-underline flex items-center gap-2 group"
-                        style="background:var(--phosphor); color:#03150a;">
-                        Get Started
-                        <span
-                            class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                    </a>
-                    <a href="https://github.com/NeuralNinja23/S.E.N.T.R.I" target="_blank"
-                        class="sweep-btn px-8 py-4 border border-[color:var(--panel-line)] bg-black/30 backdrop-blur-md text-[color:var(--paper)] font-display font-bold text-lg uppercase tracking-wide no-underline flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[color:var(--steel)]">code</span>
-                        View Source
-                    </a>
-                </div>
-            </div>
-
-            <div
-                class="absolute bottom-8 flex flex-col items-center gap-2 text-[color:var(--steel-dim)] font-mono text-[10px] tracking-[0.3em] uppercase">
-                <span>Scroll To Explore</span>
-                <span class="material-symbols-outlined text-base animate-bounce">expand_more</span>
-            </div>
-        </section>
-
-        <!-- ============ SCREENSHOT ============ -->
-        <section class="w-full max-w-6xl mx-auto px-4 py-16 relative z-20">
-            <div class="hud-panel p-2 fade-in">
-                <span class="br-tr"></span><span class="br-bl"></span>
-                <div
-                    class="flex items-center gap-2 px-4 py-2 border-b border-[color:var(--panel-line)] font-mono text-[10px] tracking-widest uppercase text-[color:var(--steel-dim)]">
-                    <span class="w-2 h-2 rounded-full bg-red-500/50"></span>
-                    <span class="w-2 h-2 rounded-full bg-amber-500/50"></span>
-                    <span class="w-2 h-2 rounded-full" style="background:var(--phosphor-dim);"></span>
-                    <span class="ml-3">Sys.Core.Visual_Output</span>
-                </div>
-                <div class="relative overflow-hidden">
-                    <img alt="SENTRI HUD Dashboard" class="w-full h-auto object-cover opacity-90" src="ui.png"
-                        onerror="this.parentElement.style.aspectRatio='16/9';this.style.display='none'" />
-                    <div class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#07090a] to-transparent">
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============ CAPABILITIES ============ -->
-        <section class="w-full max-w-6xl mx-auto px-4 py-24 flex flex-col items-center" id="capabilities">
-            <div class="flex flex-col items-center mb-16 text-center fade-in">
-                <div class="font-mono text-[10px] tracking-[0.3em] uppercase mb-4" style="color:var(--amber);">// 04
-                    Modules Active</div>
-                <h3
-                    class="font-display text-5xl md:text-6xl font-black tracking-tight text-[color:var(--paper)] uppercase glow-text">
-                    Capabilities</h3>
-                <p class="font-body text-[color:var(--steel)] mt-4 max-w-lg">Four pillars. Zero cloud dependencies.
-                    Every component runs locally on consumer hardware.</p>
-                <div class="w-16 divider-line mt-6"></div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
-                <!-- Card 1 -->
-                <div
-                    class="hud-panel p-8 flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
-                    <span class="br-tr"></span><span class="br-bl"></span>
-                    <div class="font-mono text-[10px] tracking-widest" style="color:var(--phosphor-dim);">01</div>
-                    <div
-                        class="w-11 h-11 flex items-center justify-center border border-[color:var(--panel-line)] text-[color:var(--phosphor)]">
-                        <span class="material-symbols-outlined text-2xl"
-                            style="font-variation-settings:'FILL' 1;">mic</span>
-                    </div>
-                    <h4 class="font-display text-2xl font-bold text-[color:var(--paper)] uppercase tracking-tight">
-                        Real-Time Voice Pipeline</h4>
-                    <p class="font-body text-[color:var(--steel)] text-sm leading-relaxed">Sub-second voice with
-                        concurrent workers. TTS begins synthesising while the LLM is still generating. No cloud latency.
-                    </p>
-                    <div class="mt-auto pt-4 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-wide">
-                        <span
-                            class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Faster-Whisper</span>
-                        <span class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Ollama
-                            Qwen3.5-4B</span>
-                        <span class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Kokoro
-                            ONNX</span>
-                    </div>
-                </div>
-                <!-- Card 2 -->
-                <div
-                    class="hud-panel p-8 flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
-                    <span class="br-tr"></span><span class="br-bl"></span>
-                    <div class="font-mono text-[10px] tracking-widest" style="color:var(--phosphor-dim);">02</div>
-                    <div
-                        class="w-11 h-11 flex items-center justify-center border border-[color:var(--panel-line)] text-[color:var(--amber)]">
-                        <span class="material-symbols-outlined text-2xl"
-                            style="font-variation-settings:'FILL' 1;">memory</span>
-                    </div>
-                    <h4 class="font-display text-2xl font-bold text-[color:var(--paper)] uppercase tracking-tight">
-                        Persistent Graph Memory</h4>
-                    <p class="font-body text-[color:var(--steel)] text-sm leading-relaxed">SENTRI doesn't just respond —
-                        it remembers. Relationships, facts, and preferences are automatically extracted into a knowledge
-                        graph.</p>
-                    <div class="mt-auto pt-4 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-wide">
-                        <span class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">SQLite
-                            Graph</span>
-                        <span
-                            class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Auto-Extraction</span>
-                        <span
-                            class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Context
-                            Injection</span>
-                    </div>
-                </div>
-                <!-- Card 3 -->
-                <div
-                    class="hud-panel p-8 flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
-                    <span class="br-tr"></span><span class="br-bl"></span>
-                    <div class="font-mono text-[10px] tracking-widest" style="color:var(--phosphor-dim);">03</div>
-                    <div
-                        class="w-11 h-11 flex items-center justify-center border border-[color:var(--panel-line)] text-[color:var(--phosphor)]">
-                        <span class="material-symbols-outlined text-2xl"
-                            style="font-variation-settings:'FILL' 1;">build</span>
-                    </div>
-                    <h4 class="font-display text-2xl font-bold text-[color:var(--paper)] uppercase tracking-tight">
-                        Autonomous Tool Execution</h4>
-                    <p class="font-body text-[color:var(--steel)] text-sm leading-relaxed">13 workspace tools the model
-                        invokes autonomously — filesystem, code intelligence, web search, and memory operations.</p>
-                    <div class="mt-auto pt-4 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-wide">
-                        <span
-                            class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Filesystem</span>
-                        <span class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Code
-                            Search</span>
-                        <span class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Web
-                            Search</span>
-                        <span
-                            class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Memory</span>
-                    </div>
-                </div>
-                <!-- Card 4 -->
-                <div
-                    class="hud-panel p-8 flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
-                    <span class="br-tr"></span><span class="br-bl"></span>
-                    <div class="font-mono text-[10px] tracking-widest" style="color:var(--phosphor-dim);">04</div>
-                    <div
-                        class="w-11 h-11 flex items-center justify-center border border-[color:var(--panel-line)] text-[color:var(--paper)]">
-                        <span class="material-symbols-outlined text-2xl"
-                            style="font-variation-settings:'FILL' 1;">radar</span>
-                    </div>
-                    <h4 class="font-display text-2xl font-bold text-[color:var(--paper)] uppercase tracking-tight">
-                        Sci-Fi HUD Interface</h4>
-                    <p class="font-body text-[color:var(--steel)] text-sm leading-relaxed">Immersive dashboard with
-                        orbital animations, particle fields, live system gauges, and reactive voice waveforms.</p>
-                    <div class="mt-auto pt-4 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-wide">
-                        <span
-                            class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Next.js
-                            15</span>
-                        <span
-                            class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Tailwind</span>
-                        <span
-                            class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">WebSockets</span>
-                        <span
-                            class="px-2 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">WebAudio</span>
-                    </div>
-                </div>
-            </div>
-
-            <div
-                class="mt-16 flex flex-wrap justify-center gap-3 max-w-3xl opacity-60 fade-in font-mono text-[10px] uppercase tracking-wide">
-                <span class="px-3 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Python</span>
-                <span class="px-3 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">FastAPI</span>
-                <span class="px-3 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Next.js</span>
-                <span
-                    class="px-3 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Tailwind</span>
-                <span class="px-3 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Ollama</span>
-                <span class="px-3 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Kokoro</span>
-                <span class="px-3 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">Whisper</span>
-                <span
-                    class="px-3 py-1 border border-[color:var(--panel-line)] text-[color:var(--steel)]">WebSockets</span>
-            </div>
-        </section>
-
-        <!-- ============ ARCHITECTURE ============ -->
-        <section class="w-full max-w-5xl mx-auto px-4 py-24 flex flex-col items-center" id="architecture">
-            <div class="flex flex-col items-center mb-16 text-center fade-in">
-                <div class="font-mono text-[10px] tracking-[0.3em] uppercase mb-4" style="color:var(--amber);">// System
-                    Design</div>
-                <h3
-                    class="font-display text-5xl md:text-6xl font-black tracking-tight text-[color:var(--paper)] uppercase glow-text">
-                    Architecture</h3>
-                <p class="font-body text-[color:var(--steel)] mt-4 max-w-lg">Clean layers. Zero spaghetti. Outer layers
-                    depend on inner abstractions.</p>
-                <div class="w-16 divider-line mt-6"></div>
-            </div>
-
-            <div class="hud-panel p-8 md:p-12 w-full overflow-x-auto fade-in">
-                <span class="br-tr"></span><span class="br-bl"></span>
-                <pre class="font-mono text-xs md:text-sm text-[color:var(--steel)] leading-relaxed">
-                ┌─────────────────────────────────┐
-                │       <span style="color:var(--phosphor)">Browser Client</span>           │
-                │   Next.js · Tailwind · WebAudio  │
-                └──────────┬──────────────────────┘
-                           │
-              WebSocket (<span style="color:var(--phosphor)">PCM16 ↕ Audio + JSON</span>)
-                           │
-                ┌──────────▼──────────────────────┐
-                │       <span style="color:var(--amber)">WebSocket API</span>             │
-                └──────────┬──────────────────────┘
-                           │
-                ┌──────────▼──────────────────────┐
-                │    <span style="color:var(--amber)">Conversation Engine</span>          │
-                │  ┌─────────┐ ┌──────────────┐   │
-                │  │ Memory  │ │Prompt Builder │   │
-                │  └─────────┘ └──────────────┘   │
-                └──────────┬──────────────────────┘
-                           │
-   ┌───────────────────────▼────────────────────────┐
-   │       <span style="color:var(--phosphor)">Streaming Speech Pipeline</span>                │
-   │                                                │
-   │   ┌───────┐  ┌─────────┐  ┌───────────────┐   │
-   │   │ <span style="color:var(--phosphor)">ASR</span>   │  │<span style="color:var(--amber)">Reasoning</span>│  │<span style="color:var(--paper)">Speech Planner</span>│   │
-   │   │Whisper │  │ Ollama  │  │  (Chunker)    │   │
-   │   └───────┘  └────┬────┘  └───────────────┘   │
-   │                   │                            │
-   │             ┌─────▼─────┐  ┌──────────────┐   │
-   │             │  <span style="color:var(--phosphor)">Tools</span>   │  │    <span style="color:var(--amber)">TTS</span>      │   │
-   │             │ Registry  │  │   Kokoro     │   │
-   │             └───────────┘  └──────────────┘   │
-   └────────────────────────────────────────────────┘</pre>
-            </div>
-
-            <div class="mt-6 w-full hud-panel px-8 py-6" style="border-left:2px solid var(--phosphor);">
-                <span class="br-tr"></span><span class="br-bl"></span>
-                <p class="font-body text-[color:var(--steel)] text-sm">
-                    <span style="color:var(--phosphor);" class="font-bold">Provider Independence</span> — Every provider
-                    (ASR, Reasoning, TTS) is a standalone module with zero cross-dependencies. Swapping Faster-Whisper
-                    for Moonshine, or Kokoro for Piper, requires writing one driver file and touching nothing else.
-                </p>
-            </div>
-        </section>
-
-        <!-- ============ GET STARTED ============ -->
-        <section class="w-full max-w-4xl mx-auto px-4 py-24 flex flex-col items-center" id="get-started">
-            <div class="flex flex-col items-center mb-16 text-center fade-in">
-                <div class="font-mono text-[10px] tracking-[0.3em] uppercase mb-4" style="color:var(--phosphor);">//
-                    Launch Sequence</div>
-                <h3
-                    class="font-display text-5xl md:text-6xl font-black tracking-tight text-[color:var(--paper)] uppercase glow-text">
-                    Get Started</h3>
-                <p class="font-body text-[color:var(--steel)] mt-4">Running in under 5 minutes. Python 3.10+ · Node.js
-                    18+ · Ollama · CUDA GPU</p>
-                <div class="w-16 divider-line mt-6"></div>
-            </div>
-
-            <div class="flex flex-col gap-5 w-full">
-                <!-- Step 1 -->
-                <div class="hud-panel p-8 flex gap-6 items-start fade-in">
-                    <span class="br-tr"></span><span class="br-bl"></span>
-                    <div
-                        class="flex-shrink-0 w-12 h-12 border border-[color:var(--panel-line)] flex items-center justify-center text-[color:var(--phosphor)] font-display font-bold text-xl">
-                        01</div>
-                    <div class="flex-1">
-                        <h4 class="font-display text-xl font-bold text-[color:var(--paper)] uppercase mb-2">Pull the
-                            reasoning model</h4>
-                        <p class="font-body text-[color:var(--steel)] text-sm mb-4">Ollama downloads and manages the
-                            model weights automatically.</p>
-                        <div
-                            class="bg-black/40 border border-[color:var(--panel-line)] p-4 font-mono text-sm text-[color:var(--steel)] overflow-x-auto">
-                            <span style="color:var(--phosphor)">ollama pull</span>
-                            hf.co/HauhauCS/Qwen3.5-4B-Uncensored-HauhauCS-Aggressive:Q4_K_M
-                        </div>
-                    </div>
-                </div>
-                <!-- Step 2 -->
-                <div class="hud-panel p-8 flex gap-6 items-start fade-in">
-                    <span class="br-tr"></span><span class="br-bl"></span>
-                    <div
-                        class="flex-shrink-0 w-12 h-12 border border-[color:var(--panel-line)] flex items-center justify-center text-[color:var(--phosphor)] font-display font-bold text-xl">
-                        02</div>
-                    <div class="flex-1">
-                        <h4 class="font-display text-xl font-bold text-[color:var(--paper)] uppercase mb-2">Place the
-                            VAD model</h4>
-                        <p class="font-body text-[color:var(--steel)] text-sm">Download <a
-                                href="https://github.com/snakers4/silero-vad" style="color:var(--phosphor)"
-                                class="hover:underline">Silero VAD v5</a> and place <span class="font-mono px-1"
-                                style="color:var(--phosphor); background:rgba(57,255,106,0.08);">silero_vad_v5.onnx</span>
-                            in <span class="font-mono text-[color:var(--steel)] bg-white/5 px-1">frontend/public/</span>
-                        </p>
-                    </div>
-                </div>
-                <!-- Step 3 -->
-                <div class="hud-panel p-8 flex gap-6 items-start fade-in">
-                    <span class="br-tr"></span><span class="br-bl"></span>
-                    <div
-                        class="flex-shrink-0 w-12 h-12 border border-[color:var(--panel-line)] flex items-center justify-center text-[color:var(--phosphor)] font-display font-bold text-xl">
-                        03</div>
-                    <div class="flex-1">
-                        <h4 class="font-display text-xl font-bold text-[color:var(--paper)] uppercase mb-2">Launch
-                            everything</h4>
-                        <p class="font-body text-[color:var(--steel)] text-sm mb-4">One-click on Windows, or manual
-                            two-terminal setup.</p>
-                        <div
-                            class="bg-black/40 border border-[color:var(--panel-line)] p-4 font-mono text-sm text-[color:var(--steel)] overflow-x-auto leading-relaxed">
-                            <span class="text-[color:var(--steel-dim)]"># Option A: One-click (Windows)</span>
-                            <span style="color:var(--phosphor)">run_sentri.bat</span>
-
-                            <span class="text-[color:var(--steel-dim)]"># Option B: Manual</span>
-                            <span style="color:var(--phosphor)">cd</span> backend && .\venv\Scripts\activate
-                            <span style="color:var(--phosphor)">uvicorn</span> app.main:app --reload --port 8008
-
-                            <span class="text-[color:var(--steel-dim)]"># In a second terminal</span>
-                            <span style="color:var(--phosphor)">cd</span> frontend && <span
-                                style="color:var(--phosphor)">npm install</span> && <span
-                                style="color:var(--phosphor)">npm run dev</span> -- -p 3030
-                        </div>
-                    </div>
-                </div>
-                <!-- Step 4 -->
-                <div class="hud-panel p-8 flex gap-6 items-start fade-in">
-                    <span class="br-tr"></span><span class="br-bl"></span>
-                    <div
-                        class="flex-shrink-0 w-12 h-12 border border-[color:var(--panel-line)] flex items-center justify-center text-[color:var(--phosphor)] font-display font-bold text-xl">
-                        04</div>
-                    <div class="flex-1">
-                        <h4 class="font-display text-xl font-bold text-[color:var(--paper)] uppercase mb-2">Open the HUD
-                        </h4>
-                        <p class="font-body text-[color:var(--steel)] text-sm">Navigate to <a
-                                href="http://localhost:3030" style="color:var(--phosphor)"
-                                class="hover:underline">localhost:3030</a> and start talking to SENTRI. ASR and TTS
-                            models auto-download on first launch.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- ============ FOOTER ============ -->
-    <footer
-        class="w-full flex flex-col items-center gap-3 text-center px-4 py-16 border-t border-[color:var(--panel-line)]">
-        <div class="font-display font-bold text-2xl tracking-wide uppercase" style="color:var(--phosphor);">S.E.N.T.R.I
+<!-- 2. SCREENSHOT SECTION -->
+<section class="w-full max-w-7xl mx-auto px-4 py-20 relative z-20">
+    <div class="relative w-full rounded-xl overflow-hidden glass-panel border-primary/30 p-2 shadow-[0_0_40px_rgba(0,212,255,0.15)] group fade-in">
+        <!-- Window Chrome -->
+        <div class="absolute top-0 left-0 w-full h-8 bg-bgBase/80 border-b border-primary/20 flex items-center px-4 gap-2 z-10">
+            <div class="w-3 h-3 rounded-full bg-red-500/50"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500/50"></div>
+            <div class="ml-4 font-mono text-[10px] text-white/30 tracking-widest uppercase">Sys.Core.Visual_Output</div>
         </div>
-        <p class="font-body text-sm text-[color:var(--steel)]">Built with obsession by <a
-                href="https://github.com/NeuralNinja23" style="color:var(--phosphor)" class="hover:underline"
-                target="_blank">NeuralNinja23</a></p>
-        <p class="font-mono text-xs text-[color:var(--steel-dim)] italic tracking-wide">Someone Everyone Needs To
-            Remember.</p>
-    </footer>
+        <div class="relative mt-6 rounded-lg overflow-hidden">
+            <img alt="SENTRI HUD Dashboard" class="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500" src="ui.png"/>
+            <div class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-bgBase via-bgBase/80 to-transparent"></div>
+        </div>
+    </div>
+</section>
 
-    <!-- ============ LIVE TELEMETRY STRIP ============ -->
-    <div
-        class="fixed bottom-0 left-0 w-full z-50 bg-[#07090a]/90 backdrop-blur-md border-t border-[color:var(--panel-line)] font-mono text-[10px] md:text-[11px] tracking-widest uppercase text-[color:var(--steel)]">
-        <div class="max-w-7xl mx-auto flex items-center justify-between px-4 md:px-8 py-2 gap-4 tab-nums">
-            <div class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full"
-                    style="background:var(--phosphor); box-shadow:0 0 6px var(--phosphor); animation:pulse 2s ease-in-out infinite;"></span>
-                <span style="color:var(--phosphor);">LISTENING</span>
+<!-- 3. CAPABILITIES SECTION -->
+<section class="w-full max-w-7xl mx-auto px-4 py-24 flex flex-col items-center" id="capabilities">
+    <div class="flex flex-col items-center mb-16 text-center fade-in">
+        <div class="inline-flex items-center px-3 py-1 rounded-full border border-secondary/30 bg-secondary/10 mb-4">
+            <span class="font-mono text-[10px] text-secondary tracking-[0.2em] uppercase">Modules</span>
+        </div>
+        <h3 class="font-headline text-4xl md:text-5xl font-bold tracking-tight text-white glow-text">CAPABILITIES</h3>
+        <p class="font-body text-white/50 mt-4 max-w-lg">Four pillars. Zero cloud dependencies. Every component runs locally on consumer hardware.</p>
+        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mt-6 opacity-50"></div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <!-- Card 1: Voice -->
+        <div class="glass-panel p-8 rounded-xl flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
+            <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 text-primary mb-2 group-hover:bg-primary/20 transition-colors">
+                <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">mic</span>
             </div>
-            <div class="hidden sm:block" id="telemetry-time">00:00:00 UTC</div>
-            <div id="telemetry-scroll">SIGNAL DEPTH 000%</div>
-            <div class="hidden md:block">MEM · 12,384 NODES</div>
+            <h4 class="font-display text-xl font-bold text-white">Real-Time Voice Pipeline</h4>
+            <p class="font-body text-white/60 text-sm leading-relaxed">Sub-second voice with concurrent workers. TTS begins synthesising while the LLM is still generating. No cloud latency.</p>
+            <div class="mt-auto pt-4 flex flex-wrap gap-2">
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Faster-Whisper</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Ollama Qwen3.5-4B</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Kokoro ONNX</span>
+            </div>
+        </div>
+        <!-- Card 2: Memory -->
+        <div class="glass-panel p-8 rounded-xl flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
+            <div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center border border-secondary/20 text-secondary mb-2 group-hover:bg-secondary/20 transition-colors">
+                <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">memory</span>
+            </div>
+            <h4 class="font-display text-xl font-bold text-white">Persistent Graph Memory</h4>
+            <p class="font-body text-white/60 text-sm leading-relaxed">SENTRI doesn't just respond — it remembers. Relationships, facts, and preferences are automatically extracted into a knowledge graph.</p>
+            <div class="mt-auto pt-4 flex flex-wrap gap-2">
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">SQLite Graph</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Auto-Extraction</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Context Injection</span>
+            </div>
+        </div>
+        <!-- Card 3: Tools -->
+        <div class="glass-panel p-8 rounded-xl flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
+            <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center border border-accent/20 text-accent mb-2 group-hover:bg-accent/20 transition-colors">
+                <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">build</span>
+            </div>
+            <h4 class="font-display text-xl font-bold text-white">Autonomous Tool Execution</h4>
+            <p class="font-body text-white/60 text-sm leading-relaxed">13 workspace tools the model invokes autonomously — filesystem, code intelligence, web search, and memory operations.</p>
+            <div class="mt-auto pt-4 flex flex-wrap gap-2">
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Filesystem</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Code Search</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Web Search</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Memory</span>
+            </div>
+        </div>
+        <!-- Card 4: HUD -->
+        <div class="glass-panel p-8 rounded-xl flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300 group fade-in">
+            <div class="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center border border-white/20 text-white mb-2 group-hover:bg-white/20 transition-colors">
+                <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">radar</span>
+            </div>
+            <h4 class="font-display text-xl font-bold text-white">Sci-Fi HUD Interface</h4>
+            <p class="font-body text-white/60 text-sm leading-relaxed">Immersive dashboard with orbital animations, particle fields, live system gauges, and reactive voice waveforms.</p>
+            <div class="mt-auto pt-4 flex flex-wrap gap-2">
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Next.js 15</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">Tailwind</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">WebSockets</span>
+                <span class="px-2 py-1 bg-white/5 border border-white/10 rounded font-mono text-xs text-white/50">WebAudio</span>
+            </div>
         </div>
     </div>
 
-    <style>
-        @keyframes pulse {
+    <!-- Tech Stack Pills -->
+    <div class="mt-16 flex flex-wrap justify-center gap-3 max-w-3xl opacity-60 fade-in">
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Python</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">FastAPI</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Next.js</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Tailwind</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Ollama</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Kokoro</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">Whisper</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono text-xs text-white hover:opacity-100 transition-opacity">WebSockets</span>
+    </div>
+</section>
 
-            0%,
-            100% {
-                opacity: 1;
-            }
+<!-- 4. ARCHITECTURE SECTION -->
+<section class="w-full max-w-5xl mx-auto px-4 py-24 flex flex-col items-center" id="architecture">
+    <div class="flex flex-col items-center mb-16 text-center fade-in">
+        <div class="inline-flex items-center px-3 py-1 rounded-full border border-primary/30 bg-primary/10 mb-4">
+            <span class="font-mono text-[10px] text-primary tracking-[0.2em] uppercase">System Design</span>
+        </div>
+        <h3 class="font-headline text-4xl md:text-5xl font-bold tracking-tight text-white glow-text">ARCHITECTURE</h3>
+        <p class="font-body text-white/50 mt-4 max-w-lg">Clean layers. Zero spaghetti. Outer layers depend on inner abstractions.</p>
+        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mt-6 opacity-50"></div>
+    </div>
 
-            50% {
-                opacity: 0.3;
-            }
-        }
-    </style>
+    <div class="glass-panel rounded-xl p-8 md:p-12 w-full overflow-x-auto fade-in">
+        <pre class="font-mono text-xs md:text-sm text-white/60 leading-relaxed">
+                    ┌─────────────────────────────────┐
+                    │       <span class="text-primary">Browser Client</span>           │
+                    │   Next.js · Tailwind · WebAudio  │
+                    └──────────┬──────────────────────┘
+                               │
+                  WebSocket (<span class="text-primary">PCM16 ↕ Audio + JSON</span>)
+                               │
+                    ┌──────────▼──────────────────────┐
+                    │       <span class="text-primary">WebSocket API</span>             │
+                    └──────────┬──────────────────────┘
+                               │
+                    ┌──────────▼──────────────────────┐
+                    │    <span class="text-secondary">Conversation Engine</span>          │
+                    │  ┌─────────┐ ┌──────────────┐   │
+                    │  │ Memory  │ │Prompt Builder │   │
+                    │  └─────────┘ └──────────────┘   │
+                    └──────────┬──────────────────────┘
+                               │
+       ┌───────────────────────▼────────────────────────┐
+       │       <span class="text-accent">Streaming Speech Pipeline</span>                │
+       │                                                │
+       │   ┌───────┐  ┌─────────┐  ┌───────────────┐   │
+       │   │ <span class="text-primary">ASR</span>   │  │<span class="text-secondary">Reasoning</span>│  │<span class="text-white/80">Speech Planner</span>│   │
+       │   │Whisper │  │ Ollama  │  │  (Chunker)    │   │
+       │   └───────┘  └────┬────┘  └───────────────┘   │
+       │                   │                            │
+       │             ┌─────▼─────┐  ┌──────────────┐   │
+       │             │  <span class="text-accent">Tools</span>   │  │    <span class="text-primary">TTS</span>      │   │
+       │             │ Registry  │  │   Kokoro     │   │
+       │             └───────────┘  └──────────────┘   │
+       └────────────────────────────────────────────────┘</pre>
+    </div>
 
-    <!-- ============ SCROLL FADE-IN ============ -->
-    <script>
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
-        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-    </script>
+    <div class="mt-8 w-full glass-panel rounded-xl px-8 py-6 border-l-2 border-l-primary fade-in">
+        <p class="font-body text-white/60 text-sm">
+            <span class="text-primary font-bold">Provider Independence</span> — Every provider (ASR, Reasoning, TTS) is a standalone module with zero cross-dependencies. Swapping Faster-Whisper for Moonshine, or Kokoro for Piper, requires writing one driver file and touching nothing else.
+        </p>
+    </div>
+</section>
 
-    <!-- ============ LIVE TELEMETRY LOGIC ============ -->
-    <script>
-        function pad(n) { return String(n).padStart(2, '0'); }
-        function updateTelemetry() {
-            const now = new Date();
-            const t = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())} UTC`;
-            const timeEl = document.getElementById('telemetry-time');
-            if (timeEl) timeEl.textContent = t;
+<!-- 5. GETTING STARTED SECTION -->
+<section class="w-full max-w-4xl mx-auto px-4 py-24 flex flex-col items-center" id="get-started">
+    <div class="flex flex-col items-center mb-16 text-center fade-in">
+        <div class="inline-flex items-center px-3 py-1 rounded-full border border-accent/30 bg-accent/10 mb-4">
+            <span class="font-mono text-[10px] text-accent tracking-[0.2em] uppercase">Launch Sequence</span>
+        </div>
+        <h3 class="font-headline text-4xl md:text-5xl font-bold tracking-tight text-white glow-text">GET STARTED</h3>
+        <p class="font-body text-white/50 mt-4">Running in under 5 minutes. Python 3.10+ · Node.js 18+ · Ollama · CUDA GPU</p>
+        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mt-6 opacity-50"></div>
+    </div>
 
-            const doc = document.documentElement;
-            const scrolled = doc.scrollTop || document.body.scrollTop;
-            const max = (doc.scrollHeight - doc.clientHeight) || 1;
-            const pct = Math.min(100, Math.max(0, Math.round((scrolled / max) * 100)));
-            const scrollEl = document.getElementById('telemetry-scroll');
-            if (scrollEl) scrollEl.textContent = `SIGNAL DEPTH ${String(pct).padStart(3, '0')}%`;
-        }
-        document.addEventListener('scroll', updateTelemetry, { passive: true });
-        setInterval(updateTelemetry, 1000);
-        updateTelemetry();
-    </script>
+    <div class="flex flex-col gap-6 w-full">
+        <!-- Step 1 -->
+        <div class="glass-panel rounded-xl p-8 flex gap-6 items-start fade-in">
+            <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center text-primary font-headline font-bold text-lg">1</div>
+            <div class="flex-1">
+                <h4 class="font-display text-lg font-bold text-white mb-2">Pull the reasoning model</h4>
+                <p class="font-body text-white/50 text-sm mb-4">Ollama downloads and manages the model weights automatically.</p>
+                <div class="bg-bgBase/80 border border-white/10 rounded-lg p-4 font-mono text-sm text-white/60 overflow-x-auto">
+                    <span class="text-primary">ollama pull</span> hf.co/HauhauCS/Qwen3.5-4B-Uncensored-HauhauCS-Aggressive:Q4_K_M
+                </div>
+            </div>
+        </div>
+        <!-- Step 2 -->
+        <div class="glass-panel rounded-xl p-8 flex gap-6 items-start fade-in">
+            <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center text-primary font-headline font-bold text-lg">2</div>
+            <div class="flex-1">
+                <h4 class="font-display text-lg font-bold text-white mb-2">Place the VAD model</h4>
+                <p class="font-body text-white/50 text-sm">Download <a href="https://github.com/snakers4/silero-vad" class="text-primary hover:underline">Silero VAD v5</a> and place <span class="font-mono text-primary bg-primary/10 px-1 rounded">silero_vad_v5.onnx</span> in <span class="font-mono text-white/50 bg-white/5 px-1 rounded">frontend/public/</span></p>
+            </div>
+        </div>
+        <!-- Step 3 -->
+        <div class="glass-panel rounded-xl p-8 flex gap-6 items-start fade-in">
+            <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center text-primary font-headline font-bold text-lg">3</div>
+            <div class="flex-1">
+                <h4 class="font-display text-lg font-bold text-white mb-2">Launch everything</h4>
+                <p class="font-body text-white/50 text-sm mb-4">One-click on Windows, or manual two-terminal setup.</p>
+                <div class="bg-bgBase/80 border border-white/10 rounded-lg p-4 font-mono text-sm text-white/60 overflow-x-auto leading-relaxed">
+<span class="text-white/30"># Option A: One-click (Windows)</span>
+<span class="text-primary">run_sentri.bat</span>
 
-    <!-- ============ HERO 3D MEMORY-GRAPH ============ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script>
-        (function () {
-            const canvas = document.getElementById('hero-canvas');
-            if (!canvas || typeof THREE === 'undefined') return;
+<span class="text-white/30"># Option B: Manual</span>
+<span class="text-primary">cd</span> backend && .\venv\Scripts\activate
+<span class="text-primary">uvicorn</span> app.main:app --reload --port 8008
 
-            const section = canvas.parentElement;
-            let w = section.clientWidth, h = section.clientHeight;
+<span class="text-white/30"># In a second terminal</span>
+<span class="text-primary">cd</span> frontend && <span class="text-primary">npm install</span> && <span class="text-primary">npm run dev</span> -- -p 3030
+                </div>
+            </div>
+        </div>
+        <!-- Step 4 -->
+        <div class="glass-panel rounded-xl p-8 flex gap-6 items-start fade-in">
+            <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center text-primary font-headline font-bold text-lg">4</div>
+            <div class="flex-1">
+                <h4 class="font-display text-lg font-bold text-white mb-2">Open the HUD</h4>
+                <p class="font-body text-white/50 text-sm">Navigate to <a href="http://localhost:3030" class="text-primary hover:underline">localhost:3030</a> and start talking to SENTRI. ASR and TTS models auto-download on first launch.</p>
+            </div>
+        </div>
+    </div>
+</section>
 
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
-            camera.position.z = 7.5;
+</main>
 
-            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.setSize(w, h);
+<!-- Footer -->
+<footer class="w-full flex flex-col items-center gap-4 text-center px-4 bg-[#050508] py-16 border-t border-[#7c3aed]/20">
+    <div class="font-headline font-bold text-[#00d4ff] text-xl tracking-wider mb-2">S.E.N.T.R.I</div>
+        <p class="font-body text-sm text-white/50">
+            © 2024 S.E.N.T.R.I — Digital Human. Developed by NeuralNinja23
+        </p>
+    <p class="font-body text-sm text-white/30 italic">Someone Everyone Needs To Remember.</p>
+</footer>
 
-            // Build a knowledge-graph sphere: nodes placed via fibonacci sphere, edges to nearest neighbors
-            const NODE_COUNT = 90;
-            const radius = 3.1;
-            const positions = [];
-            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+<!-- Scroll Animations -->
+<script>
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
 
-            for (let i = 0; i < NODE_COUNT; i++) {
-                const yF = 1 - (i / (NODE_COUNT - 1)) * 2;
-                const r = Math.sqrt(1 - yF * yF);
-                const theta = goldenAngle * i;
-                const x = Math.cos(theta) * r;
-                const z = Math.sin(theta) * r;
-                positions.push(new THREE.Vector3(x, yF, z).multiplyScalar(radius));
-            }
-
-            // Nodes as points
-            const nodeGeo = new THREE.BufferGeometry().setFromPoints(positions);
-            const nodeMat = new THREE.PointsMaterial({ color: 0x39ff6a, size: 0.065, sizeAttenuation: true, transparent: true, opacity: 0.9 });
-            const nodePoints = new THREE.Points(nodeGeo, nodeMat);
-            scene.add(nodePoints);
-
-            // Edges: connect each node to its nearest few neighbors
-            const edgeVerts = [];
-            const K = 3;
-            for (let i = 0; i < positions.length; i++) {
-                const dists = [];
-                for (let j = 0; j < positions.length; j++) {
-                    if (i === j) continue;
-                    dists.push([positions[i].distanceTo(positions[j]), j]);
-                }
-                dists.sort((a, b) => a[0] - b[0]);
-                for (let k = 0; k < K; k++) {
-                    const j = dists[k][1];
-                    edgeVerts.push(positions[i].x, positions[i].y, positions[i].z);
-                    edgeVerts.push(positions[j].x, positions[j].y, positions[j].z);
-                }
-            }
-            const edgeGeo = new THREE.BufferGeometry();
-            edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgeVerts, 3));
-            const edgeMat = new THREE.LineBasicMaterial({ color: 0x1f8f43, transparent: true, opacity: 0.28 });
-            const edges = new THREE.LineSegments(edgeGeo, edgeMat);
-            scene.add(edges);
-
-            // Outer wire sphere for structure
-            const wireGeo = new THREE.IcosahedronGeometry(radius * 1.35, 1);
-            const wireMat = new THREE.MeshBasicMaterial({ color: 0xffb020, wireframe: true, transparent: true, opacity: 0.06 });
-            const wireSphere = new THREE.Mesh(wireGeo, wireMat);
-            scene.add(wireSphere);
-
-            const group = new THREE.Group();
-            group.add(nodePoints, edges, wireSphere);
-            scene.add(group);
-
-            let mouseX = 0, mouseY = 0;
-            window.addEventListener('mousemove', (e) => {
-                mouseX = (e.clientX / window.innerWidth - 0.5);
-                mouseY = (e.clientY / window.innerHeight - 0.5);
-            });
-
-            function onResize() {
-                w = section.clientWidth; h = section.clientHeight;
-                camera.aspect = w / h;
-                camera.updateProjectionMatrix();
-                renderer.setSize(w, h);
-            }
-            window.addEventListener('resize', onResize);
-
-            const clock = new THREE.Clock();
-            function animate() {
-                const t = clock.getElapsedTime();
-                group.rotation.y = t * 0.08 + mouseX * 0.6;
-                group.rotation.x = mouseY * 0.3;
-                wireSphere.rotation.y = -t * 0.03;
-                nodeMat.opacity = 0.75 + Math.sin(t * 1.4) * 0.15;
-                renderer.render(scene, camera);
-                requestAnimationFrame(animate);
-            }
-            animate();
-        })();
-    </script>
-
-</body>
-
-</html>
+</body></html>
