@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 
 # Add backend directory to path dynamically
-BACKEND_DIR = Path(__file__).resolve().parent.parent.parent / "backend"
+BACKEND_DIR = Path(__file__).resolve().parent.parent.parent.parent / "backend"
 sys.path.append(str(BACKEND_DIR))
 
 # Make sure we load env variables
