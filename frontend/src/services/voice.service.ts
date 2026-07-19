@@ -102,7 +102,10 @@ class VoiceService {
       },
       this.isRecordingRef,
       () => {
-        voiceStore.setState({ speakingState: "INACTIVE" });
+        const { speakingState } = voiceStore.getState();
+        if (speakingState !== "THINKING" && speakingState !== "SPEAKING" && speakingState !== "STANDBY" && speakingState !== "WAKING") {
+          voiceStore.setState({ speakingState: "INACTIVE" });
+        }
       }
     );
 
@@ -204,7 +207,10 @@ class VoiceService {
       },
       this.isRecordingRef,
       () => {
-        voiceStore.setState({ speakingState: "INACTIVE" });
+        const { speakingState } = voiceStore.getState();
+        if (speakingState !== "THINKING" && speakingState !== "SPEAKING" && speakingState !== "STANDBY" && speakingState !== "WAKING") {
+          voiceStore.setState({ speakingState: "INACTIVE" });
+        }
       }
     );
   }

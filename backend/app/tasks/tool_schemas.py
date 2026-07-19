@@ -202,9 +202,13 @@ TOOL_SCHEMAS = [
                     "fact": {
                         "type": "string",
                         "description": "The clean, factual sentence about the user to remember."
+                    },
+                    "category": {
+                        "type": "string",
+                        "description": "The memory category for this fact (e.g. 'Identity', 'Career', 'Preference', 'Goal', 'Lifestyle', 'Project')."
                     }
                 },
-                "required": ["fact"]
+                "required": ["fact", "category"]  # Bug #30: category was missing — caused TypeError on every tool call
             }
         }
     },
@@ -219,6 +223,23 @@ TOOL_SCHEMAS = [
                     "query": {
                         "type": "string",
                         "description": "The search terms or keyword."
+                    }
+                },
+                "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "forget_fact",
+            "description": "Deletes user facts or preferences matching query keywords from persistent memory.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The keyword or term describing what information to delete (e.g. 'Hospitality', 'Rohan', 'favorite color')."
                     }
                 },
                 "required": ["query"]

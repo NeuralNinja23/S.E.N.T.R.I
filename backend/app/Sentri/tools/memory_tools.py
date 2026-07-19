@@ -33,3 +33,11 @@ def search_memory(query: str) -> str:
     adapter = _get_adapter()
     return adapter.search_memory(query)
 
+def forget_fact(query: str) -> str:
+    """
+    Deletes any verified user facts or preferences matching the query terms from persistent memory.
+    - query: Keywords or topics to forget (e.g. "Hospitality", "Rohan", "favorite color").
+    """
+    adapter = _get_adapter()
+    return adapter.forget_fact(query)
+

@@ -152,10 +152,12 @@ class MemoryRuntime:
         Updates last_recalled_at timestamp for all matched entries.
         """
         memories = self.provider.query(query)
-        now = self._now_iso()
-        for entry in memories:
-            self.provider.update_recall_time(entry.id, now)
-            entry.last_recalled_at = now
+        if memories:
+            now = self._now_iso()
+            entry_ids = [entry.id for entry in memories]
+            self.provider.batch_update_recall_time(entry_ids, now)
+            for entry in memories:
+                entry.last_recalled_at = now
         return MemoryResult(memories=memories, count=len(memories))
 
     def exists(self, category: str, subject: str, predicate: str, object_val: str) -> Optional[str]:

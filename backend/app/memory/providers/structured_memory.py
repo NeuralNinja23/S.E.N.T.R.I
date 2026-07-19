@@ -133,6 +133,10 @@ class StructuredMemoryProvider:
         """Updates last_recalled_at timestamp."""
         self.store.update_last_recalled_at(entry_id, timestamp)
 
+    def batch_update_recall_time(self, entry_ids: List[str], timestamp: str):
+        """Updates last_recalled_at timestamp for a batch of entries (Bug #17)."""
+        self.store.batch_update_last_recalled_at(entry_ids, timestamp)
+
     def record_evidence(self, obs: EvidenceEntry):
         """Records a reinforcement observation."""
         data = {

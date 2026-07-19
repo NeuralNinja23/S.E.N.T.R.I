@@ -227,6 +227,10 @@ class ConversationRuntime(ISpeechToSpeechModel):
         quick_response = self.quick_response_engine.respond(intent, transcript)
         if quick_response:
             logger.info(f"[{turn_id}] Quick response: '{quick_response}' (intent={intent})")
+            # Bug #25: Stamp clock fields so TTFT/TTFA metrics are non-negative on bypass turns
+            context.clock.llm_start_time = time.time()
+            context.clock.first_token_time = time.time()
+            context.clock.first_audio_frame_time = time.time()
             yield "text", quick_response
             # Synthesize TTS directly
             async for audio_bytes in self.tts.synthesize(quick_response):
@@ -245,10 +249,9 @@ class ConversationRuntime(ISpeechToSpeechModel):
         context.memory_context = combined_memory
         context.clock.prompt_built_time = time.time()
 
-        # Rewrite greeting transcripts to standard 'hi' to prevent Ollama entity confusion
+        # Bug #1: Always send the original transcript — no intent-based rewrite.
+        # Quick responses handle true greetings before the LLM is reached.
         model_input_transcript = transcript
-        if intent == "IDENTITY_QUERY":
-            model_input_transcript = "hi"
 
         reasoning_request = self.prompt_builder.build(
             system_prompt=system_prompt,
@@ -291,43 +294,9 @@ class ConversationRuntime(ISpeechToSpeechModel):
             finally:
                 context.clock.llm_end_time = time.time()
 
-        import re
         def clean_voice_phrase(text: str) -> str:
-            if not text:
-                return ""
-            # Strip factual checks rejections
-            text = re.sub(r"^[iI] don't have that information\.?", "", text)
-            # Strip generic helper / closing questions — covers all observed phi4-mini patterns
-            cliches = [
-                # "How may/can I assist/help/serve/further ..."
-                r"\b[hH]ow (?:can|may|else may|else can) (?:I |Sentri |we )(?:further |help |assist |serve |be of service).*$",
-                # "What can Sentri/I do ..."
-                r"\b[wW]hat (?:can|else can) (?:I |Sentri )(?:do|help).*$",
-                # "Is there anything else ..."
-                r"\b[iI]s there anything (?:else |specific |)(?:you|I|that).*$",
-                # "If there's anything ... let me know"
-                r"\b[iI]f there'?s anything.*(?:let me know|I can help|assist).*$",
-                # "How's your day going?" / "How may we continue?"
-                r"\b[hH]ow(?:'s| is) your (?:day|evening|night|morning).*$",
-                r"\b[hH]ow may we continue\??.*$",
-                # "Feel free to ask ..."
-                r"\b[fF]eel free to (?:ask|reach out|let me know).*$",
-                # "Please feel free ..."
-                r"\b[pP]lease (?:feel free|let me know|don't hesitate).*$",
-                # "I'm here to assist/help ..."
-                r"\b[iI]'?m (?:here|ready|at your service).*(?:assist|help|for you|for any).*$",
-                # "I am here and ready ..."
-                r"\b[iI] am here and ready.*$",
-                # "Your feedback is important ..."
-                r"\b[yY]our feedback is important.*$",
-                # "Thank you for bringing this up ..."
-                r"\b[tT]hank you for (?:bringing|asking|your).*$",
-                # "How can I further assist you?" at end
-                r"[—–-]\s*[iI]'?m here now.*$",
-            ]
-            for cliche in cliches:
-                text = re.sub(cliche, "", text, flags=re.IGNORECASE)
-            return text.strip()
+            from app.conversation.utils import ResponseCleaner
+            return ResponseCleaner.clean(text)
 
         async def speech_planner_worker():
             """Consumes LLM tokens, plans acoustic chunks, and passes to TTS."""
@@ -458,6 +427,7 @@ class ConversationRuntime(ISpeechToSpeechModel):
             self.event_bus.publish(Interrupted(turn_id=turn_id))
             supervisor.cancel("all")
         finally:
+            self.speech_planner.flush()  # Bug #21: clear/reset speech planner buffer to prevent bleed between turns
             await supervisor.cleanup()
             self.event_bus.publish(AudioFinished(turn_id=turn_id))
             context.reasoning_response = "".join(accumulated_text)

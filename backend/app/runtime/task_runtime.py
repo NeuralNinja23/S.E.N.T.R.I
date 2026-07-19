@@ -35,6 +35,19 @@ async def task_worker_loop():
             task_queue.task_done()
             continue
             
+        # Bug #27: Block execution loop if task is currently PAUSED
+        while task.status == TaskStatus.PAUSED:
+            if task.cancel_requested:
+                task.status = TaskStatus.CANCELLED
+                task.updated_at = datetime.now()
+                emit_event(task_id, "TASK_CANCELLED")
+                break
+            await asyncio.sleep(0.5)
+
+        if task.status == TaskStatus.CANCELLED:
+            task_queue.task_done()
+            continue
+            
         # Update state to running
         task.status = TaskStatus.RUNNING
         task.progress = 10

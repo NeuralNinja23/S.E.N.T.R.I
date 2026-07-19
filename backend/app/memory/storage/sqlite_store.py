@@ -12,9 +12,10 @@ class SQLiteStore:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.initialize_db()
 
-    def get_conn(self) -> sqlite3.connect:
+    def get_conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(str(self.db_path))
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON;")  # Bug #12: enable CASCADE deletes on evidence table
         return conn
 
     def initialize_db(self):
@@ -194,6 +195,18 @@ class SQLiteStore:
             SET last_recalled_at = ?
             WHERE id = ?
         """, (timestamp, entry_id))
+        conn.commit()
+        conn.close()
+
+    def batch_update_last_recalled_at(self, entry_ids: List[str], timestamp: str):
+        """Updates last_recalled_at timestamp for a batch of memories (Bug #17)."""
+        if not entry_ids:
+            return
+        conn = self.get_conn()
+        cursor = conn.cursor()
+        placeholders = ",".join("?" for _ in entry_ids)
+        query = f"UPDATE memory_entries SET last_recalled_at = ? WHERE id IN ({placeholders})"
+        cursor.execute(query, [timestamp] + entry_ids)
         conn.commit()
         conn.close()
 

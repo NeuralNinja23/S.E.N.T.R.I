@@ -1,0 +1,15 @@
+{
+  "greeting_hello": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\greeting_hello.wav",
+  "greeting_punctuated": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\greeting_punctuated.wav",
+  "query_time": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\query_time.wav",
+  "query_name": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\query_name.wav",
+  "query_projects": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\query_projects.wav",
+  "query_vram": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\query_vram.wav",
+  "query_ram": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\query_ram.wav",
+  "barge_in_stop": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\barge_in_stop.wav",
+  "barge_in_wait": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\barge_in_wait.wav",
+  "compound_morning": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\compound_morning.wav",
+  "cancel_restart_1": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\cancel_restart_1.wav",
+  "cancel_restart_2": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\cancel_restart_2.wav",
+  "cancel_restart_3": "C:\\Users\\JARVIS\\Desktop\\SENTRI\\backend\\tests\\wav\\cancel_restart_3.wav"
+}

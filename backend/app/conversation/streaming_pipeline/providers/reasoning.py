@@ -67,30 +67,120 @@ class OllamaReasoningProvider(ReasoningProvider):
             payload = {
                 "model": self.model_name,
                 "messages": messages,
-                "stream": False,       # Run non-streamed first to easily parse tool calls
+                "stream": True,         # Bug #4: Enable true streaming
                 "think": False,         # Disable thinking mode
                 "keep_alive": -1,       # Keep model in VRAM
                 "tools": TOOL_SCHEMAS,  # Pass tools list
                 "options": {
                     "temperature": 0.6,
                     "num_ctx": 12288,
+                    "num_predict": 1024,  # Bug #6: cap tokens to prevent runaway voice generation
                     "repeat_penalty": 1.1
                 }
             }
 
             try:
-                res = await self._client.post(url, json=payload)
-                if res.status_code != 200:
-                    logger.error(f"Ollama endpoint returned HTTP error {res.status_code}")
-                    return
+                async with self._client.stream("POST", url, json=payload) as response:
+                    if response.status_code != 200:
+                        logger.error(f"Ollama endpoint returned HTTP error {response.status_code}")
+                        return
 
-                data = res.json()
-                message = data.get("message", {})
-                tool_calls = message.get("tool_calls", [])
+                    tool_calls = []
+                    assistant_message = {"role": "assistant", "content": ""}
+                    
+                    class ThinkTagStripper:
+                        def __init__(self):
+                            self.buffer = ""
+                            self.in_think = False
+
+                        def feed(self, token: str) -> str:
+                            self.buffer += token
+                            if "<think>" in self.buffer and not self.in_think:
+                                parts = self.buffer.split("<think>", 1)
+                                before = parts[0]
+                                self.buffer = parts[1]
+                                self.in_think = True
+                                return before
+                            if self.in_think:
+                                if "</think>" in self.buffer:
+                                    parts = self.buffer.split("</think>", 1)
+                                    self.buffer = parts[1]
+                                    self.in_think = False
+                                    return self.feed("")
+                                else:
+                                    self.buffer = ""
+                                    return ""
+                            else:
+                                if any(self.buffer.endswith(self.buffer[:i]) for i in range(1, len(self.buffer)) if "<think>".startswith(self.buffer[:i])):
+                                    return ""
+                                out = self.buffer
+                                self.buffer = ""
+                                return out
+
+                    stripper = ThinkTagStripper()
+
+                    async for line in response.aiter_lines():
+                        if not line.strip():
+                            continue
+                        chunk = json.loads(line)
+                        msg_chunk = chunk.get("message", {})
+                        
+                        # Accumulate tool calls if present in the stream
+                        chunk_tool_calls = msg_chunk.get("tool_calls", [])
+                        for tc in chunk_tool_calls:
+                            idx = tc.get("index", 0)
+                            while len(tool_calls) <= idx:
+                                tool_calls.append({
+                                    "id": "",
+                                    "type": "function",
+                                    "function": {"name": "", "arguments": ""}
+                                })
+                            target = tool_calls[idx]
+                            if tc.get("id"):
+                                target["id"] = tc["id"]
+                            if tc.get("type"):
+                                target["type"] = tc["type"]
+                            
+                            tc_func = tc.get("function", {})
+                            if tc_func.get("name"):
+                                target["function"]["name"] = tc_func["name"]
+                            
+                            tc_args = tc_func.get("arguments", "")
+                            if tc_args:
+                                if isinstance(tc_args, dict):
+                                    if not isinstance(target["function"]["arguments"], dict):
+                                        target["function"]["arguments"] = {}
+                                    target["function"]["arguments"].update(tc_args)
+                                else:
+                                    if isinstance(target["function"]["arguments"], dict):
+                                        target["function"]["arguments"] = ""
+                                    target["function"]["arguments"] += tc_args
+
+                        # Stream content if present
+                        content_chunk = msg_chunk.get("content", "")
+                        if content_chunk:
+                            # Strip /no_think suffix if echoes back
+                            content_chunk = content_chunk.replace("/no_think", "")
+                            cleaned_token = stripper.feed(content_chunk)
+                            if cleaned_token:
+                                assistant_message["content"] += cleaned_token
+                                yield cleaned_token
+
+                    # Post-process tool calls arguments if they are strings
+                    for tc in tool_calls:
+                        func_info = tc.get("function", {})
+                        args = func_info.get("arguments", "")
+                        if isinstance(args, str) and args.strip():
+                            try:
+                                func_info["arguments"] = json.loads(args)
+                            except Exception as parse_err:
+                                logger.error(f"Failed to parse streamed tool call arguments JSON: {parse_err}")
+                                func_info["arguments"] = {}
 
                 if tool_calls:
                     # Append assistant message containing the tool calls to conversation history
-                    messages.append(message)
+                    assistant_message["tool_calls"] = tool_calls
+                    messages.append(assistant_message)
 
                     for tool_call in tool_calls:
                         func_info = tool_call.get("function", {})
@@ -143,14 +233,7 @@ class OllamaReasoningProvider(ReasoningProvider):
                     continue
 
                 else:
-                    # No tool calls requested, this is the final text response!
-                    content = message.get("content", "")
-                    
-                    # Yield tokens by splitting the text into words with a tiny delay to simulate streaming
-                    words = content.split(" ")
-                    for i, word in enumerate(words):
-                        yield word + (" " if i < len(words) - 1 else "")
-                        await asyncio.sleep(0.02)  # 20ms delay to overlap synthesis and speech planner
+                    # No tool calls requested, text turn finished streaming
                     return
 
             except Exception as e:

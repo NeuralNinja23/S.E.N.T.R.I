@@ -37,12 +37,13 @@ class KokoroTTSProvider(TTSProvider):
         try:
             # Run the synchronous CPU/GPU-bound ONNX model execution in a background thread
             # to prevent blocking the main event loop.
+            from app.config import TTS_LANGUAGE  # Bug #24: use configurable language instead of hardcoded "en-us"
             samples, sample_rate = await asyncio.to_thread(
                 kokoro.create,
                 text,
                 voice=self.voice_name,
                 speed=1.0,
-                lang="en-us"
+                lang=TTS_LANGUAGE
             )
             if samples is not None and len(samples) > 0:
                 # Convert float32 array normalized to [-1.0, 1.0] to 16-bit signed PCM

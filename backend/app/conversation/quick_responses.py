@@ -42,6 +42,10 @@ class QuickResponseEngine:
         if self._is_date_question(query):
             return self._current_date()
 
+        # ── GPU usage query (Bug #14: checked BEFORE RAM to prevent vram→ram shadowing)
+        if self._is_gpu_question(query):
+            return self._gpu_usage()
+
         # ── RAM usage query ───────────────────────────────────────
         if self._is_ram_question(query):
             return self._ram_usage()
@@ -49,10 +53,6 @@ class QuickResponseEngine:
         # ── CPU usage query ───────────────────────────────────────
         if self._is_cpu_question(query):
             return self._cpu_usage()
-
-        # ── GPU usage query ───────────────────────────────────────
-        if self._is_gpu_question(query):
-            return self._gpu_usage()
 
         # ── Disk usage query ──────────────────────────────────────
         if self._is_disk_question(query):
@@ -120,13 +120,16 @@ class QuickResponseEngine:
         return query in ("stop", "shut up", "be quiet", "silence", "enough")
 
     def _is_ram_question(self, query: str) -> bool:
-        return "ram" in query or "memory usage" in query or "virtual memory" in query
+        # Bug #13: word-boundary regex prevents "programming" / "drama" false positives
+        return bool(re.search(r"\bram\b", query)) or "memory usage" in query or "virtual memory" in query
 
     def _is_cpu_question(self, query: str) -> bool:
-        return "cpu" in query or "processor usage" in query or "processor utilization" in query
+        # Bug #13: word-boundary regex prevents substring false positives like "occupy"
+        return bool(re.search(r"\bcpu\b", query)) or "processor usage" in query or "processor utilization" in query
 
     def _is_gpu_question(self, query: str) -> bool:
-        return "gpu" in query or "graphics card" in query or "vram" in query
+        # Bug #13: word-boundary regex — also prevents "vram" matching _is_ram_question
+        return bool(re.search(r"\bgpu\b", query)) or "graphics card" in query or bool(re.search(r"\bvram\b", query))
 
     def _is_disk_question(self, query: str) -> bool:
         return "disk" in query or "storage" in query or "hard drive" in query or "hard disk" in query
@@ -157,14 +160,16 @@ class QuickResponseEngine:
             from app.memory.contracts import MemoryQuery
             runtime = MemoryRuntime()
             result = runtime.recall(MemoryQuery(
-                category="identity", subject="user", limit=5, include_inferred=True
+                category="Identity",  # Bug #26: title-case to match how remember_fact stores it
+                subject="user", limit=5, include_inferred=True
             ))
             for mem in result.memories:
-                if mem.predicate in ("preferred_name", "name", "full_name"):
+                # Bug #16: lowercase predicate for case-insensitive match (PREFERRED_NAME, name, etc.)
+                if mem.predicate.lower() in ("preferred_name", "name", "full_name"):
                     return f"Your name is {mem.object}."
         except Exception:
             pass
-        return "Your name is Nisarg."
+        return "Your name is Sir."
 
     def _current_time(self) -> str:
         now = datetime.datetime.now()

@@ -76,3 +76,35 @@ class MemoryAdapter:
         except Exception as e:
             logger.error(f"Adapter failed to search memory: {e}")
             return json.dumps({"results": [], "error": str(e)})
+
+    def forget_fact(self, query: str) -> str:
+        """
+        Deletes memory entries matching the query keywords.
+        """
+        try:
+            keywords = [w.strip().lower() for w in query.strip().split() if w.strip().lower() not in ("about", "my", "the", "from", "your", "memory", "that", "record")]
+            if not keywords:
+                return json.dumps({"status": "error", "message": "No query keywords provided."})
+                
+            all_memories = self.runtime.list_memories()
+            deleted_count = 0
+            for entry in all_memories:
+                match = False
+                for w in keywords:
+                    if (w in entry.category.lower() or
+                        w in entry.subject.lower() or 
+                        w in entry.predicate.lower() or 
+                        w in entry.object.lower()):
+                        match = True
+                        break
+                if match:
+                    self.runtime.delete(entry.id)
+                    deleted_count += 1
+            
+            return json.dumps({
+                "status": "success",
+                "message": f"Successfully deleted {deleted_count} matching memory entries."
+            })
+        except Exception as e:
+            logger.error(f"Adapter failed to forget memory: {e}")
+            return json.dumps({"status": "error", "message": str(e)})

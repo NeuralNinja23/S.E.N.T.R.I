@@ -19,13 +19,13 @@ _REDACTION_RULES: list[tuple[re.Pattern[str], str]] = [
     # Generic prefix catch — left after the vendor-specific rules
     (re.compile(r"\b(AWS|GH|GCP|AZURE|xox[abpcr]-)[A-Za-z0-9_\-]{10,}\b", re.IGNORECASE), "[REDACTED_TOKEN]"),
     (re.compile(r"\b(?:eyJ[0-9A-Za-z._\-]+)\b"), "[REDACTED_JWT]"),
-    # Keyword-anchored credentials.
+    # Keyword-anchored credentials — Bug #29: match quoted multi-word OR bare single-token values
     (re.compile(
-        r"\b(pass(?:word)?|secret|token|apikey|api_key|"
-        r"(?:refresh|access|id|oauth)_?token|session(?:_?id)?|sid)"
-        r"\s*[:=]\s*\S+\b",
+        r'\b(pass(?:word)?|secret|token|apikey|api_key|'
+        r'(?:refresh|access|id|oauth)_?token|session(?:_?id)?|sid)'
+        r'\s*[:=]\s*(?:"[^"]*"|\'[^\']*\'|\S+)',
         re.IGNORECASE,
-    ), r"\1=[REDACTED]"),
+    ), r'\1=[REDACTED]'),
     (re.compile(r"\b[0-9A-Fa-f]{32,}\b"), "[REDACTED_HEX]"),
     (re.compile(r"\b\d{6}\b(?=.*(otp|2fa|code))", re.IGNORECASE), "[REDACTED_OTP]"),
 ]

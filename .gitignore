@@ -35,6 +35,7 @@ Sentri.db
 # Rotated logs
 *.log.*
 backend.log.*
+30 Bugs
 
 # Model weights
 backend/app/local/resources/
@@ -44,3 +45,7 @@ backend/app/local/resources/
 *.bin
 backend/app/conversation/resources/
 *.wasm
+
+# Test coverage & Archives
+.coverage
+30 Bugs.zip

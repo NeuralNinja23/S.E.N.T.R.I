@@ -41,20 +41,11 @@ class FasterWhisperASRProvider(ASRProvider):
                 logger.error("Faster-Whisper model is not initialized inside InferenceRuntimeManager.")
                 return ""
 
-            # === DIAGNOSTIC LOGGING ===
-            duration_s = len(audio_array) / 16000.0
-            logger.info(
-                f"[ASR DEBUG] Audio stats: "
-                f"samples={len(audio_array)}, duration={duration_s:.2f}s, "
-                f"dtype={audio_array.dtype}, shape={audio_array.shape}, "
-                f"min={audio_array.min():.4f}, max={audio_array.max():.4f}, "
-                f"mean={audio_array.mean():.6f}"
-            )
-            # === END DIAGNOSTIC ===
-
+            # Bug #23: Removed [ASR DEBUG] amplitude/diagnostic logging block — was polluting production logs
             # beam_size=1 = greedy decoding. Much faster for conversational ASR.
             # Accuracy drop is minimal vs. the latency gain.
-            segments, info = whisper.transcribe(audio_array, beam_size=1, language="en")
+            from app.config import ASR_LANGUAGE  # Bug #10: language from config, default "en"
+            segments, info = whisper.transcribe(audio_array, beam_size=1, language=ASR_LANGUAGE)
             text = "".join([segment.text for segment in segments]).strip()
             return text
 

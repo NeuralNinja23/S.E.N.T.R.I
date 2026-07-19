@@ -2,6 +2,15 @@ import re
 import math
 from typing import Dict, List, Set, Any
 
+# Bug #19 (improved): anchors the full utterance — handles all punctuation variants
+# of pure greetings while letting compound sentences fall through to TF-IDF.
+_GREETING_ONLY = re.compile(
+    r"^(hi|hello|hey|greetings|yo|sup|howdy|whats up|"
+    r"good\s+morning|good\s+afternoon|good\s+evening)"
+    r"[!\?,\.\s]*$",
+    re.IGNORECASE
+)
+
 class IntentAnalyzer:
     """
     Analyzes user utterances and classifies them into structured cognitive intents.
@@ -112,8 +121,10 @@ class IntentAnalyzer:
         # Map common ASR phonetic greeting errors
         query_clean = re.sub(r"\b(high centri|high sentri|high centry|high sentry|hi centri|hi sentri|hi centry|hi sentry|hello sentri)\b", "hi", query_clean)
         
-        if query_clean in ("hi", "hello", "hey", "greetings", "yo", "sup", "good morning", "good afternoon", "good evening") or query_clean.startswith(("hi ", "hello ", "hey ", "greetings ", "good morning", "good afternoon", "good evening")):
+        # Bug #19 (improved): full-utterance greeting match (compiled at module level)
+        if _GREETING_ONLY.match(query_clean):
             return "IDENTITY_QUERY"
+
 
         query_words = self._tokenize(query)
         if not query_words:

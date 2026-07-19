@@ -18,30 +18,9 @@ class ConversationAdapter:
     
     @staticmethod
     def _clean_response(raw: str) -> str:
-        """Strip <think>...</think> blocks, normalize whitespace, and strip generic assistant clichés."""
-        if not raw:
-            return ""
-        cleaned = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL)
-        
-        # 1. Clean out the "I don't have that information" prefix for casual queries (jokes/stories/tools)
-        cleaned = re.sub(r"^[iI] don't have that information\.\s*(If you'd like to hear another type of story or need assistance with something else, feel free to let me know!)?\s*", "", cleaned)
-        cleaned = re.sub(r"^[iI] don't have that information\.\s*(If you'd like, I can remember it for next time we chat!)?\s*", "", cleaned)
-        cleaned = re.sub(r"^[iI] don't have that information\.\s*(I'm Sentri, here to assist with any questions or tasks within my capabilities!?)?\s*", "", cleaned)
-        cleaned = re.sub(r"^[iI] don't have that information\.\s*", "", cleaned)
-        
-        # 2. Strip generic customer support clichés programmatically ONLY at the very end of the string.
-        # Uses loose matching to catch variants (e.g. "this fine day", "further today", "resources", "instruments").
-        cliches = [
-            r"\b[hH]ow (can|may) I (further |help |assist |serve ).*\??\s*$",
-            r"\b[iI]s there anything else (you would prefer to discuss|I can help|I can assist|you'd like|you would prefer).*\??\s*$",
-            r"\b[wW]hat else can I (do|help).*\??\s*$",
-            r"\b[hH]ow may these .* serve us today\??\s*$",
-            r"\b[iI]'m Sentri, (here to assist|here to help).*\s*$"
-        ]
-        for cliche in cliches:
-            cleaned = re.sub(cliche, "", cleaned, flags=re.IGNORECASE)
-            
-        return cleaned.strip()
+        """Strip <think>...</think> blocks, normalize whitespace, and strip generic assistant clichés using shared ResponseCleaner."""
+        from app.conversation.utils import ResponseCleaner
+        return ResponseCleaner.clean(raw)
     
     @staticmethod
     def generate(
@@ -84,6 +63,7 @@ class ConversationAdapter:
     async def generate_async(
         system_prompt: str,
         user_content: str,
+        history: list = None,          # Bug #3: accept prior conversation turns
         temperature: float = 0.7,
         stream: bool = False,
         on_token=None,
@@ -93,11 +73,15 @@ class ConversationAdapter:
         try:
             url = "http://127.0.0.1:11434/api/chat"
             
-            # Build conversation context messages history
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content}
-            ]
+            # Bug #3: Build messages with full conversation history for multi-turn context
+            messages = [{"role": "system", "content": system_prompt}]
+            if history:
+                for entry in history:
+                    role = entry.get("role", "user")
+                    content = entry.get("text") or entry.get("content", "")
+                    if content:
+                        messages.append({"role": role, "content": content})
+            messages.append({"role": "user", "content": user_content})
             
             # Loop for multi-turn tool calling (up to 5 turns)
             for turn in range(5):
@@ -126,14 +110,7 @@ class ConversationAdapter:
                     message = data.get("message", {})
                     tool_calls = message.get("tool_calls", [])
                     
-                    # Log the JSON for debugging
-                    try:
-                        json_path = r"C:\Users\JARVIS\.gemini\antigravity-ide\brain\05416677-6b3f-44a9-ab02-29fddfedefe5\scratch\full_ollama_json.json"
-                        with open(json_path, "w", encoding="utf-8") as f:
-                            json.dump(data, f, indent=2, ensure_ascii=False)
-                    except Exception as json_err:
-                        logger.error(f"Failed to write full json log: {json_err}")
-                    
+                    # Bug #18: Removed blocking synchronous debug file write (full_ollama_json.json)
                     if tool_calls:
                         # Append assistant message containing the tool calls to conversation history
                         messages.append(message)
@@ -192,12 +169,7 @@ class ConversationAdapter:
                     else:
                         # No tool calls requested, this is the final text response!
                         raw_content = message.get("content", "")
-                        try:
-                            raw_path = r"C:\Users\JARVIS\.gemini\antigravity-ide\brain\05416677-6b3f-44a9-ab02-29fddfedefe5\scratch\raw_ollama_response.txt"
-                            with open(raw_path, "w", encoding="utf-8") as f:
-                                f.write(raw_content)
-                        except Exception as raw_err:
-                            logger.error(f"Failed to write raw response log: {raw_err}")
+                        # Bug #18: Removed blocking synchronous debug file write (raw_ollama_response.txt)
                         return ConversationAdapter._clean_response(raw_content)
                         
             # If we completed 5 turns and still calling tools, return a warning

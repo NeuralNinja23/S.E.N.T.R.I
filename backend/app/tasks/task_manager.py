@@ -47,9 +47,9 @@ def cancel_task(task_id: str) -> bool:
     return False
 
 def pause_all_tasks():
-    """Transitions any RUNNING tasks to PAUSED."""
+    """Transitions any RUNNING or PENDING tasks to PAUSED."""
     for task_id, task in tasks.items():
-        if task.status == TaskStatus.RUNNING:
+        if task.status in (TaskStatus.RUNNING, TaskStatus.PENDING):
             task.status = TaskStatus.PAUSED
             task.updated_at = datetime.now()
             emit_event(task_id, "TASK_PAUSED")

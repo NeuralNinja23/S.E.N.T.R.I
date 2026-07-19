@@ -1,5 +1,6 @@
 """Real system telemetry endpoint using psutil + nvidia-smi."""
 import time
+import threading
 import psutil
 import subprocess
 import platform
@@ -10,6 +11,7 @@ router = APIRouter()
 _boot_time = psutil.boot_time()
 _last_net = psutil.net_io_counters()
 _last_net_time = time.time()
+_net_lock = threading.Lock()  # Bug #28: prevent race condition under concurrent polls
 
 
 def _get_gpu_stats() -> dict:
@@ -33,17 +35,18 @@ def _get_gpu_stats() -> dict:
 def _get_net_speed() -> dict:
     """Calculate network speed in bytes/sec since last call."""
     global _last_net, _last_net_time
-    now = time.time()
-    current = psutil.net_io_counters()
-    dt = now - _last_net_time
-    if dt < 0.1:
-        dt = 1  # Avoid division by zero on first call
+    with _net_lock:  # Bug #28: serialize concurrent callers to prevent state pollution
+        now = time.time()
+        current = psutil.net_io_counters()
+        dt = now - _last_net_time
+        if dt < 0.1:
+            dt = 1  # Avoid division by zero on first call
 
-    send_speed = (current.bytes_sent - _last_net.bytes_sent) / dt
-    recv_speed = (current.bytes_recv - _last_net.bytes_recv) / dt
+        send_speed = (current.bytes_sent - _last_net.bytes_sent) / dt
+        recv_speed = (current.bytes_recv - _last_net.bytes_recv) / dt
 
-    _last_net = current
-    _last_net_time = now
+        _last_net = current
+        _last_net_time = now
 
     return {
         "net_send_bps": round(send_speed),

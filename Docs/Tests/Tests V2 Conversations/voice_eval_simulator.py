@@ -282,12 +282,12 @@ async def main():
     avg_ttfa = sum_ttfa / len([r for r in results if r["ttfa"] > 0])
     avg_total = sum_total / len(results)
     
-    # Write V2 Report
-    report_path = Path(__file__).resolve().parent / "SENTRI Evaluation Session Report V2.md"
-    print(f"\nWriting Report V2 to: {report_path}")
+    # Write V4 Report
+    report_path = Path(__file__).resolve().parent / "SENTRI Evaluation Session Report V4.md"
+    print(f"\nWriting Report V4 to: {report_path}")
     
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write("# Phase 1 — 30-Minute Evaluation Session Report V2\n\n")
+        f.write("# Phase 1 — 30-Minute Evaluation Session Report V4\n\n")
         f.write("## Session Summary\n")
         f.write("- **Duration**: 30 minutes (Simulated Voice Session)\n")
         f.write(f"- **Conversation Turns**: {len(results)}\n")
@@ -384,7 +384,7 @@ async def main():
             clean_response = r["response"].replace("|", "\\|")
             f.write(f"| #{r['turn']} | {r['category']} | {r['query']} | {clean_response} | {ttft} | {ttfa} | {total} |\n")
             
-    print("[SUCCESS] Report V2 written successfully.")
+    print("[SUCCESS] Report V4 written successfully.")
     
     print("Shutting down inference engines...")
     inference_runtime_manager.stop()

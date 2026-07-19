@@ -15,6 +15,10 @@ REASONING_MODEL = os.getenv("REASONING_MODEL", "phi4-mini:latest")
 TTS_PROVIDER = os.getenv("TTS_PROVIDER", "kokoro")
 TTS_SPEAKER_VOICE = os.getenv("TTS_SPEAKER_VOICE", "bm_george")
 
+# Language Settings (Bug #10 + Bug #24: configurable instead of hardcoded)
+ASR_LANGUAGE = os.getenv("ASR_LANGUAGE", "en")   # Language code for Faster-Whisper ASR
+TTS_LANGUAGE = os.getenv("TTS_LANGUAGE", "en-us")  # Language code for Kokoro TTS
+
 
 # Vision Settings
 VISION_INTERVAL = 2.0  # seconds between screen captures

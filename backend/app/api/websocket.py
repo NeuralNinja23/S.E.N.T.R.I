@@ -37,6 +37,12 @@ from app.memory.contracts import MemoryQuery
 
 memory_runtime = MemoryRuntime()
 
+# Bug #20: Module-level singletons — built once at startup, reused across all text turns
+from app.conversation.intent_analysis import IntentAnalyzer
+from app.conversation.retrieval_planner import RetrievalPlanner
+_intent_analyzer = IntentAnalyzer()
+_retrieval_planner = RetrievalPlanner()
+
 
 async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: ConversationSession):
     """Processes speech input with MiniOmni2, tracking TTFT and TTFA latency metrics."""
@@ -50,6 +56,7 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: 
             yield speech_bytes
             
         logger.info(f"[SESSION {session.session_id}] Sending speech turn to ConversationEngine...")
+        runtime_store.set_state(RuntimeState.THINKING)
         response_generator = conversation_engine.run_voice_turn(
             audio_generator(),
             history=session.conversation_history
@@ -70,6 +77,7 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: 
             if first_chunk:
                 # Set UI state back to READY for streaming reply
                 await safe_send_json(websocket, {"type": "state", "state": "READY"})
+                runtime_store.set_state(RuntimeState.SPEAKING)
                 first_chunk = False
                 
             if chunk["type"] == "audio":
@@ -105,11 +113,13 @@ async def process_user_turn(speech_bytes: bytes, websocket: WebSocket, session: 
         logger.error(f"Error in speech processing turn: {e}")
         session.speaking = False
     finally:
+        runtime_store.set_state(RuntimeState.READY)
         await safe_send_json(websocket, {"type": "state", "state": "READY"})
 
 async def process_user_text_turn(text_query: str, websocket: WebSocket, session: ConversationSession):
     """Processes text query directly, returning text reply without TTS."""
     session.start_turn()
+    runtime_store.set_state(RuntimeState.THINKING)
     session.append_user_turn(text_query)
     try:
         # Send USER log to frontend
@@ -146,10 +156,17 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
                             deleted_count += 1
                     
                     if deleted_count > 0:
-                        response_text = "I have removed that information from this conversation. It won't be treated as part of your long-term profile unless you tell me otherwise."
+                        response_text = (
+                            f"Done. I've removed {deleted_count} "
+                            f"{'entry' if deleted_count == 1 else 'entries'} from memory."
+                        )
                         logger.info(f"Memory erasure executed for words {words}. Deleted {deleted_count} entries.")
                     else:
-                        response_text = "I have removed that pending information from this conversation. It won't be treated as part of your long-term profile unless you tell me otherwise."
+                        # Bug #22: Return honest "not found" instead of false confirmation
+                        response_text = (
+                            "I couldn't find any matching memory entries to delete. "
+                            "Could you be more specific about what to forget?"
+                        )
                     
                     await safe_send_json(websocket, {"type": "text", "data": response_text})
                     await safe_send_json(websocket, {"type": "state", "state": "READY"})
@@ -161,12 +178,9 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
         
         # 1. Reasoning (Ollama LLM)
         try:
-            from app.conversation.intent_analysis import IntentAnalyzer
-            from app.conversation.retrieval_planner import RetrievalPlanner
-            analyzer = IntentAnalyzer()
-            planner = RetrievalPlanner()
-            intent = analyzer.analyze(text_query)
-            categories, budget = planner.plan(intent)
+            # Bug #20: Use module-level cached singletons instead of rebuilding every turn
+            intent = _intent_analyzer.analyze(text_query)
+            categories, budget = _retrieval_planner.plan(intent)
             
             res_memories = []
             for category in categories:
@@ -205,13 +219,7 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
         )
         if not response_text:
             logger.error(f"[SESSION {session.session_id}] Generation failure: empty response from model.")
-            try:
-                debug_path = r"C:\Users\JARVIS\.gemini\antigravity-ide\brain\05416677-6b3f-44a9-ab02-29fddfedefe5\scratch\failed_prompt.txt"
-                with open(debug_path, "w", encoding="utf-8") as f:
-                    f.write(f"=== SYSTEM PROMPT ===\n{final_instruction}\n\n=== USER QUERY ===\n{text_query}\n")
-            except Exception as debug_err:
-                logger.error(f"Failed to write debug file: {debug_err}")
-                
+            # Bug #18: Removed blocking synchronous debug file write (failed_prompt.txt)
             await safe_send_json(websocket, {
                 "type": "system",
                 "status": "generation_failure",
@@ -233,6 +241,7 @@ async def process_user_text_turn(text_query: str, websocket: WebSocket, session:
         logger.error(f"Error in local text processing turn: {e}")
         session.speaking = False
     finally:
+        runtime_store.set_state(RuntimeState.READY)
         await safe_send_json(websocket, {"type": "state", "state": "READY"})
 
 @router.websocket("/ws/voice")
@@ -267,6 +276,10 @@ async def voice_websocket(websocket: WebSocket):
             try:
                 await asyncio.sleep(10)
                 if runtime_store.state not in (RuntimeState.STANDBY, RuntimeState.WAKING):
+                    # Bug #8: Gate standby transition on active speaking/thinking states
+                    if session.speaking or runtime_store.state in (RuntimeState.THINKING, RuntimeState.SPEAKING):
+                        runtime_store.update_activity()
+                        continue
                     elapsed = time.time() - runtime_store.last_activity_time
                     if elapsed >= STANDBY_TIMEOUT_SECONDS:
                         logger.info(f"[INACTIVITY] {STANDBY_TIMEOUT_SECONDS}s of idle. Entering standby.")
@@ -292,13 +305,21 @@ async def voice_websocket(websocket: WebSocket):
                     try:
                         payload = json.loads(message["text"])
                         p_type = payload.get("type")
-                        cmd_text = payload.get("text", "").upper().strip()
+                        cmd_text = payload.get("text", "").strip()
+                        cmd_upper = cmd_text.upper()
                         if p_type == "wake_word":
-                            is_wake_trigger = True
-                        elif p_type == "command" and cmd_text in ("EXIT_STANDBY", "WAKE", "EXIT standby"):
                             is_wake_trigger = True
                         elif p_type == "governance" and payload.get("command") == "exit_standby":
                             is_wake_trigger = True
+                        elif p_type == "command" and cmd_upper in ("EXIT_STANDBY", "WAKE", "EXIT STANDBY"):
+                            is_wake_trigger = True
+                        elif p_type == "command" and cmd_text and cmd_upper != "ENTER_STANDBY":
+                            # Bug #7: Any normal text command during standby wakes + processes it
+                            logger.info("Text query received in standby. Waking and processing.")
+                            runtime_store.update_activity()
+                            asyncio.create_task(runtime_service.wake(websocket))
+                            asyncio.create_task(process_user_text_turn(cmd_text, websocket, session))
+                            continue
                     except Exception:
                         pass
                 
@@ -328,8 +349,10 @@ async def voice_websocket(websocket: WebSocket):
                             elif cmd_text.upper().strip() == "EXIT_STANDBY":
                                 asyncio.create_task(runtime_service.wake(websocket))
                             else:
-                                # Intercept and process local text queries (which still works)
-                                asyncio.create_task(process_user_text_turn(cmd_text, websocket, session))
+                                # Bug #9: Store task reference so stop command can cancel it
+                                session.text_task = asyncio.create_task(
+                                    process_user_text_turn(cmd_text, websocket, session)
+                                )
                                 
                     elif p_type == "governance":
                         cmd = payload.get("command")
@@ -345,6 +368,14 @@ async def voice_websocket(websocket: WebSocket):
                             from app.tasks.task_manager import stop_all_tasks
                             stop_all_tasks()
                             session.speaking = False
+                            # Bug #9: Cancel in-flight text task on stop
+                            if hasattr(session, 'text_task') and session.text_task and not session.text_task.done():
+                                session.text_task.cancel()
+                                try:
+                                    await session.text_task
+                                except asyncio.CancelledError:
+                                    pass
+                                session.text_task = None
                             await safe_send_json(websocket, {"type": "interrupt"})
                         elif cmd == "enter_standby":
                             runtime_service.standby()
@@ -366,6 +397,16 @@ async def voice_websocket(websocket: WebSocket):
             elif "bytes" in message and message["bytes"]:
                 raw_audio = message["bytes"]
                 if len(raw_audio) > 0 and len(raw_audio) % 2 == 0:
+                    if session.speaking:
+                        # Bug #15: Barge-in detected! Cancel active turn tasks and clear speech buffer
+                        logger.info(f"[SESSION {session.session_id}] Barge-in detected. Interrupting speaking.")
+                        from app.tasks.task_manager import stop_all_tasks
+                        stop_all_tasks()
+                        session.speaking = False
+                        if hasattr(session, 'text_task') and session.text_task and not session.text_task.done():
+                            session.text_task.cancel()
+                        session.clear_speech_buffer()
+                        await safe_send_json(websocket, {"type": "interrupt"})
                     # Accumulate raw audio bytes inside the session
                     session.append_audio(raw_audio)
                 
