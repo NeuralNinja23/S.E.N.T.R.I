@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" fill="none">
+  <!-- Deep tab background -->
+  <rect width="480" height="480" rx="90" fill="#05070a"/>
+  
+  <!-- Center Core Circle -->
+  <circle cx="240" cy="240" r="72" fill="#05070a" stroke="#00e5ff" stroke-width="9" />
+  
+  <!-- Inner Compass Ticks Ring -->
+  <circle cx="240" cy="240" r="86" stroke="#00e5ff" stroke-width="12" stroke-dasharray="8 16" />
+  
+  <!-- Double Amber Boundary Rings -->
+  <circle cx="240" cy="240" r="112" stroke="#ff9e00" stroke-width="3" opacity="0.6"/>
+  <circle cx="240" cy="240" r="124" stroke="#ff9e00" stroke-width="3" opacity="0.6"/>
+  
+  <!-- The Four Corner Brackets -->
+  <g stroke="#ff9e00" stroke-width="15" stroke-linecap="round">
+    <path d="M 134.8 201.7 A 118 118 0 0 1 201.7 134.8" />
+    <path d="M 278.3 134.8 A 118 118 0 0 1 345.2 201.7" />
+    <path d="M 345.2 278.3 A 118 118 0 0 1 278.3 345.2" />
+    <path d="M 201.7 345.2 A 118 118 0 0 1 134.8 278.3" />
+  </g>
+  
+  <!-- Thick Segmented Outer Ring -->
+  <circle cx="240" cy="240" r="142" stroke="#00e5ff" stroke-width="16" stroke-dasharray="270 120 420 180" />
+  
+  <!-- Outermost Ticked Dial -->
+  <circle cx="240" cy="240" r="154" stroke="#00e5ff" stroke-width="5" opacity="0.8"/>
+  <circle cx="240" cy="240" r="158" stroke="#00e5ff" stroke-width="16" stroke-dasharray="6 24" opacity="0.5"/>
+</svg>
