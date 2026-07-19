@@ -57,6 +57,12 @@ that listens, speaks, remembers, and acts. Every component runs locally.<br>
 No cloud APIs. No telemetry. No data leaves your machine.
 </p>
 
+<div align="center">
+  <a href="https://neuralninja23.github.io/S.E.N.T.R.I/" target="_blank" rel="noopener noreferrer">
+    <strong>✨ Explore the Interactive Landing Page Live</strong>
+  </a>
+</div>
+
 <br>
 
 ---
