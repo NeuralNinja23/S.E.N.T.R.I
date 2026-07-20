@@ -1,17 +1,14 @@
 import asyncio
-import time
-import datetime
-import os
 import logging
 from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 
-from app.config import get_system_instruction
 from app.runtime.runtime_state import runtime_store, RuntimeState
 from app.capability_2.core.session import ConversationSession
 from app.capability_2.core.engine import ConversationEngine
 from app.capability_2.routing.intent_analysis import IntentAnalyzer
 from app.capability_2.routing.retrieval_planner import RetrievalPlanner
+from app.capability_2.prompts.system_prompt import SystemPromptProvider
 
 # Import API operations from Capability 1
 from app.capability_1.api.memory import handle_memory_erasure, retrieve_memory_context
@@ -22,6 +19,7 @@ logger = logging.getLogger("conversation_api")
 conversation_engine = ConversationEngine()
 _intent_analyzer = IntentAnalyzer()
 _retrieval_planner = RetrievalPlanner()
+_system_prompt_provider = SystemPromptProvider()  # shared singleton — same as voice pipeline
 
 
 async def safe_send_json(websocket: WebSocket, payload: dict):
@@ -146,39 +144,21 @@ async def process_user_text_turn(
         # Set UI state to THINKING
         await safe_send_json(websocket, {"type": "state", "state": "THINKING"})
 
-        # 1. Reasoning (Ollama LLM)
+        # ── Intent → Memory retrieval (same as voice path) ──────────
         try:
             intent = _intent_analyzer.analyze(text_query)
             categories, budget = _retrieval_planner.plan(intent)
-
-            # Delegate memory retrieval and formatting to Capability 1 Memory API
             warm_profile_block = retrieve_memory_context(categories, budget)
         except Exception as planning_err:
             logger.error(f"Failed in planning/retrieval: {planning_err}")
             warm_profile_block = ""
 
-        now = datetime.datetime.now()
-        current_date = now.strftime("%A, %B %d, %Y")
-        current_time = now.strftime("%I:%M %p")
-        time_context = (
-            f"\n\n=== TEMPORAL & ENVIRONMENT REALITY ===\n"
-            f"- Current Date: {current_date}\n"
-            f"- Current Time: {current_time}\n"
-        )
-        location = os.getenv("LOCAL_LOCATION")
-        if location:
-            time_context += f"- Current Location: {location}\n"
-        time_context += "======================================\n"
-
-        final_instruction = (
-            get_system_instruction()
-            + time_context
-            + f"\n\n<!-- cache_bypass: {time.time()} -->"
-        )
+        # ── System prompt (same as voice path: sentri.md + time + cache_bypass) ──
+        final_instruction = _system_prompt_provider.build()
         if warm_profile_block:
             final_instruction += "\n\n" + warm_profile_block
 
-        # Get uploaded document context from Capability 1 Upload API
+        # ── Uploaded document context (same as voice path) ───────────
         docs_context = get_all_documents_text_context()
         if docs_context:
             final_instruction += (

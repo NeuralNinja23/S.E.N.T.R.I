@@ -250,30 +250,13 @@ class ConversationRuntime(ISpeechToSpeechModel):
         # Retrieve uploaded documents context
         docs_context = await asyncio.to_thread(self.memory_provider.retrieve)
 
-        # Retrieve structured memory context from MemoryRuntime
+        # Retrieve structured memory context — same path as text turns
         try:
-            from app.capability_1.core.runtime import MemoryRuntime
-            from app.capability_1.core.context_builder import MemoryContextBuilder
-            from app.capability_1.core.contracts import MemoryQuery
+            from app.capability_1.api.memory import retrieve_memory_context
 
-            m_runtime = MemoryRuntime()
             intent = self.intent_analyzer.analyze(transcript)
             categories, budget = self.retrieval_planner.plan(intent)
-
-            res_memories = []
-            for category in categories:
-                q = MemoryQuery(
-                    category=category,
-                    subject="user",
-                    limit=budget,
-                    include_inferred=True,
-                )
-                res = m_runtime.recall(q)
-                res_memories.extend(res.memories)
-
-            structured_context = MemoryContextBuilder.build_context(
-                res_memories, max_chars=4000, limit=budget
-            )
+            structured_context = retrieve_memory_context(categories, budget)
         except Exception as e:
             logger.error(f"Failed to retrieve structured memories: {e}")
             structured_context = ""

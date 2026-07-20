@@ -12,7 +12,7 @@ class SystemPromptProvider:
     def __init__(self, instruction_path: Optional[Path] = None):
         if instruction_path is None:
             self.instruction_path = (
-                Path(__file__).resolve().parent.parent
+                Path(__file__).resolve().parent.parent.parent  # prompts/ → capability_2/ → app/
                 / "Sentri"
                 / "Instructions"
                 / "sentri.md"
