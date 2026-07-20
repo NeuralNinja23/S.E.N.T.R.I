@@ -1,27 +1,26 @@
-# SENTRI V2 — Persistent Memory Domain Architecture
+# SENTRI V2 — Persistent Memory Domain Architecture (`capability_1`)
 
-This document defines the architecture of the persistent memory subsystem in SENTRI V2 (`capability_1`), covering the storage model, retrieval contract, verification lifecycle, and context injection pipeline.
+*   **Purpose**: Remember the user.
+*   **Domain Question**: *"What do I know?"*
+*   **Responsibility**: Declarative Knowledge (Facts, Evidence, Verification, Retrieval).
+
+Capability 1 is responsible for managing facts, evidence, verification, retrieval, updates, and forgetting through a structured knowledge lifecycle.
 
 ---
 
-## ⚖️ Core Architecture Rule
+## ⚖️ Core Boundary Rules & Delegation Contract
 
-> **Memory is read-only from the conversation layer. Only the memory domain owns writes.**
-
-This is the governing rule for every change to the memory domain.
+1. **Epistemic Ownership**: Only Capability 1 owns writes and updates to declarative user facts. No other component or capability may write directly to the database or storage layer.
+2. **Procedural Boundary**: Capability 1 **never** stores conversational preferences, habits, instructions, or procedural style rules (e.g., *"don't explain so much"*). It delegates all behavioral adaptation to Capability 2.
+3. **Delegation Incoming**: Capability 1 accepts verified declarative knowledge inputs from the Reflection Engine and maps them to memory structures.
 
 | ✅ Allowed | ❌ Forbidden |
 |---|---|
-| `conversation.py` → `retrieve_memory_context()` | `conversation.py` → `sqlite_store.py` directly |
-| `memory.py` → `MemoryRuntime.remember()` | `websocket.py` → `MemoryEntry` construction |
-| `MemoryRuntime` → `StructuredMemoryProvider` | `prompt_builder.py` → `MemoryRuntime` directly |
+| `capability_2` → `retrieve_memory_context()` | `capability_2` → writes to SQLite directly |
+| `Reflection Engine` → `MemoryRuntime.remember()` | Storing style preferences (*"speak concisely"*) in `sentri_memory.db` |
+| `MemoryRuntime` → `StructuredMemoryProvider` | `PromptBuilder` → direct database queries |
 
-The only places that should write to memory:
-- `capability_1/api/memory.py` — erasure and retrieval API
-- `capability_1/core/runtime.py` — `remember()`, `delete()`, `recall()`
-- `Sentri/tools/memory_tools.py` — tool-calling write path
-
-Everything else reads memory exclusively through `retrieve_memory_context()` or `MemoryContextBuilder.build_context()`.
+---
 
 ---
 

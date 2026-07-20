@@ -1,20 +1,50 @@
-# SENTRI V2 — Conversation Intelligence Domain Architecture
+# SENTRI V2 — Conversation Intelligence Domain Architecture (`capability_2`)
 
-This document defines the current architecture of the Conversation Intelligence subsystem (`capability_2`) in SENTRI V2. It covers the decoupled ASR → LLM → TTS streaming pipeline, the intent routing layer, the prompt assembly system, and the WebSocket API boundary.
+*   **Purpose**: Become a better conversational partner.
+*   **Domain Question**: *"How should I improve?"*
+*   **Responsibility**: Procedural Adaptation (Understanding, Planning, Responding, Reflecting, Learning, Adapting, and updating the Behavioral State).
+
+Capability 2 does not merely generate responses. It continuously evaluates the quality of interactions, extracts procedural learning, maintains a Behavioral State, and applies that learning to improve future conversations. Its objective is not to remember the user; its objective is to become a better conversational partner.
+
+Through the Self-Improving Conversation Loop, Capability 2 reflects on every interaction, learns from conversational feedback, adapts its behavioral state, and continuously improves future conversations.
 
 ---
 
-## ⚖️ Core Architecture Rule
+## 🧠 Core Cognitive Principle: The Reflection Split
 
-> **Outer layers depend on inner abstractions. Inner layers never depend on outer implementations.**
+Every completed interaction produces two independent outputs:
+
+1. **Knowledge (Declarative Facts)**: *"My favorite color is charcoal"* → **Delegated directly to Capability 1**. Capability 2 does not own or store facts.
+2. **Behavior (Conversational State)**: *"Stop explaining so much"* → **Retained and handled within Capability 2**. It updates the local Behavioral State.
+
+This split creates a clean contract between the capabilities: if it is a fact, Capability 2 delegates it; if it is behavioral or procedural learning, Capability 2 owns it.
+
+---
+
+## ⚖️ Core Boundary Rules & Delegation Contract
+
+1. **Behavioral State Persistence**: Capability 2 maintains a persistent, mutable **Behavioral State**. Unlike declarative facts (which are verified or invalidated), behavioral states can strengthen with repeated feedback, weaken if unused, decay over time, or be overridden by newer preferences.
+2. **Outer Dependency Boundary**: Outer execution planes depend on inner abstractions. Inner layers never depend on outer WebSockets or connection transport layers.
 
 | ✅ Allowed | ❌ Forbidden |
 |---|---|
-| `websocket.py` → `process_user_turn()` | `pipeline.py` → `websocket.py` |
-| `conversation.py` → `ConversationEngine` | `ConversationEngine` → `WebSocket` |
-| `ConversationEngine` → `ProviderRegistry` | `asr.py` → `PromptBuilder` |
-| `PromptBuilder` → `MemoryProvider` | `MemoryProvider` → `ConversationSession` |
-| `conversation.py` → `capability_1.api.memory` | `pipeline.py` → `sqlite_store.py` |
+| `Reflection Engine` → delegates facts to `Capability 1` | Storing declarative facts (*"Nisarg founded GenxAI Labz"*) inside Capability 2 |
+| `Behavioral State` → guides prompts & planner decisions | Writing to SQLite database directly from Conversation workers |
+| `websocket.py` → `process_user_turn()` | `pipeline.py` or `engine.py` references to `WebSocket` objects |
+
+---
+
+## 🎭 The Behavioral State Structure
+
+The **Behavioral State** is an abstract representation of Sentri's execution posture. Underneath the hood, it influences:
+
+* **Conversation Style**: Tone, pacing, verbosity boundaries, and vocabulary adjustments.
+* **Planning Strategy**: Selection of routing policies, quick responses, or deep reasoning paths.
+* **Dialogue Policies**: Handling of interruptions, barge-in thresholds, and recovery protocols.
+* **Interaction Preferences**: Tool selection thresholds and active screen capture intervals.
+* **Reflection History & Learning State**: Active reinforcement weights and habituation decay indices.
+
+Whether these states influence prompts, routing rules, or a future fine-tuned model is an internal implementation detail of Capability 2.
 
 ---
 

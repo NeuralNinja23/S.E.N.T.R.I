@@ -1,4 +1,4 @@
-Sentri V2 - Capability 0.1 - Persistent Memory Stress Test
+Sentri V2 - Capability 2.0.1 - Persistent Memory Stress Test
 Objective
 
 Validate that Sentri can:
