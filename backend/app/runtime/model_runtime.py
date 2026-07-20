@@ -9,6 +9,7 @@ from pathlib import Path
 
 logger = logging.getLogger("model_runtime")
 
+
 class ModelState(str, Enum):
     UNLOADED = "UNLOADED"
     LOADING = "LOADING"
@@ -16,11 +17,13 @@ class ModelState(str, Enum):
     FAILED = "FAILED"
     UNLOADING = "UNLOADING"
 
+
 class InferenceRuntimeManager:
     """
-    Manages in-memory singletons and lifecycle allocations for local models 
+    Manages in-memory singletons and lifecycle allocations for local models
     (Faster-Whisper ASR & Kokoro ONNX TTS) using explicit model states.
     """
+
     def __init__(self):
         self.state: ModelState = ModelState.UNLOADED
         self.whisper_model = None
@@ -43,7 +46,7 @@ class InferenceRuntimeManager:
             def load_whisper():
                 import onnxruntime as ort
                 from faster_whisper import WhisperModel
-                
+
                 # Check CUDA availability via ONNX runtime to avoid PyTorch dependency
                 available_providers = ort.get_available_providers()
                 if "CUDAExecutionProvider" in available_providers:
@@ -52,12 +55,18 @@ class InferenceRuntimeManager:
                 else:
                     device = "cpu"
                     compute_type = "int8"
-                
-                logger.info(f"[RUNTIME] Loading Faster-Whisper (base) on {device} ({compute_type})...")
+
+                logger.info(
+                    f"[RUNTIME] Loading Faster-Whisper (base) on {device} ({compute_type})..."
+                )
                 try:
-                    return WhisperModel("base", device=device, compute_type=compute_type)
+                    return WhisperModel(
+                        "base", device=device, compute_type=compute_type
+                    )
                 except Exception as err:
-                    logger.warning(f"[RUNTIME] Failed loading Faster-Whisper on {device}: {err}. Falling back to CPU.")
+                    logger.warning(
+                        f"[RUNTIME] Failed loading Faster-Whisper on {device}: {err}. Falling back to CPU."
+                    )
                     return WhisperModel("base", device="cpu", compute_type="int8")
 
             self.whisper_model = await asyncio.to_thread(load_whisper)
@@ -69,7 +78,11 @@ class InferenceRuntimeManager:
                 import urllib.request
 
                 # Paths relative to backend
-                resources_dir = Path(__file__).resolve().parent.parent / "conversation" / "resources"
+                resources_dir = (
+                    Path(__file__).resolve().parent.parent
+                    / "conversation"
+                    / "resources"
+                )
                 resources_dir.mkdir(parents=True, exist_ok=True)
 
                 model_path = resources_dir / "kokoro-v1.0.onnx"
@@ -80,16 +93,20 @@ class InferenceRuntimeManager:
 
                 # Trigger automatic downloads if files do not exist
                 if not model_path.exists():
-                    logger.info(f"[RUNTIME] Kokoro ONNX model missing. Downloading from {MODEL_URL}...")
+                    logger.info(
+                        f"[RUNTIME] Kokoro ONNX model missing. Downloading from {MODEL_URL}..."
+                    )
                     urllib.request.urlretrieve(MODEL_URL, str(model_path))
                 if not voices_path.exists():
-                    logger.info(f"[RUNTIME] Kokoro voices data missing. Downloading from {VOICES_URL}...")
+                    logger.info(
+                        f"[RUNTIME] Kokoro voices data missing. Downloading from {VOICES_URL}..."
+                    )
                     urllib.request.urlretrieve(VOICES_URL, str(voices_path))
 
                 # Check ONNX providers
                 def is_cudnn_available() -> bool:
-                    import os
                     from pathlib import Path
+
                     for path_dir in os.environ.get("PATH", "").split(os.pathsep):
                         try:
                             p = Path(path_dir)
@@ -108,16 +125,27 @@ class InferenceRuntimeManager:
                     return False
 
                 available_providers = ort.get_available_providers()
-                if "CUDAExecutionProvider" in available_providers and is_cudnn_available():
+                if (
+                    "CUDAExecutionProvider" in available_providers
+                    and is_cudnn_available()
+                ):
                     providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
-                    logger.info("[RUNTIME] Initializing Kokoro TTS with CUDA Execution Provider...")
+                    logger.info(
+                        "[RUNTIME] Initializing Kokoro TTS with CUDA Execution Provider..."
+                    )
                     try:
-                        inf_sess = ort.InferenceSession(str(model_path), providers=providers)
+                        inf_sess = ort.InferenceSession(
+                            str(model_path), providers=providers
+                        )
                         return Kokoro.from_session(inf_sess, str(voices_path))
                     except Exception as err:
-                        logger.warning(f"[RUNTIME] Failed loading Kokoro TTS on CUDA: {err}. Falling back to CPU.")
-                
-                logger.info("[RUNTIME] Initializing Kokoro TTS with CPU Execution Provider...")
+                        logger.warning(
+                            f"[RUNTIME] Failed loading Kokoro TTS on CUDA: {err}. Falling back to CPU."
+                        )
+
+                logger.info(
+                    "[RUNTIME] Initializing Kokoro TTS with CPU Execution Provider..."
+                )
                 providers = ["CPUExecutionProvider"]
                 inf_sess = ort.InferenceSession(str(model_path), providers=providers)
                 return Kokoro.from_session(inf_sess, str(voices_path))
@@ -133,7 +161,9 @@ class InferenceRuntimeManager:
                     list(segments)  # Consume the generator to trigger compilation
                     logger.info("[RUNTIME] Faster-Whisper warmup complete.")
                 except Exception as e:
-                    logger.warning(f"[RUNTIME] Faster-Whisper warmup failed (non-fatal): {e}")
+                    logger.warning(
+                        f"[RUNTIME] Faster-Whisper warmup failed (non-fatal): {e}"
+                    )
 
             await asyncio.to_thread(warmup_whisper)
 
@@ -141,7 +171,9 @@ class InferenceRuntimeManager:
             def warmup_kokoro():
                 try:
                     logger.info("[RUNTIME] Warming up Kokoro TTS CUDA kernels...")
-                    self.kokoro_model.create("warmup", voice="bm_george", speed=1.0, lang="en-us")
+                    self.kokoro_model.create(
+                        "warmup", voice="bm_george", speed=1.0, lang="en-us"
+                    )
                     logger.info("[RUNTIME] Kokoro TTS warmup complete.")
                 except Exception as e:
                     logger.warning(f"[RUNTIME] Kokoro warmup failed (non-fatal): {e}")
@@ -151,12 +183,20 @@ class InferenceRuntimeManager:
             # 4. Warm-up Ollama: send a minimal dummy prompt to force model into GPU VRAM
             async def warmup_ollama():
                 from app.config import REASONING_MODEL
+
                 try:
-                    logger.info(f"[RUNTIME] Warming up Ollama model '{REASONING_MODEL}' into VRAM...")
+                    logger.info(
+                        f"[RUNTIME] Warming up Ollama model '{REASONING_MODEL}' into VRAM..."
+                    )
                     async with httpx.AsyncClient(timeout=120.0) as client:
                         await client.post(
                             "http://127.0.0.1:11434/api/generate",
-                            json={"model": REASONING_MODEL, "prompt": "hi", "stream": False, "options": {"num_predict": 1}}
+                            json={
+                                "model": REASONING_MODEL,
+                                "prompt": "hi",
+                                "stream": False,
+                                "options": {"num_predict": 1},
+                            },
                         )
                     logger.info("[RUNTIME] Ollama model warmup complete.")
                 except Exception as e:
@@ -168,10 +208,14 @@ class InferenceRuntimeManager:
             asyncio.create_task(warmup_ollama())
 
             self.state = ModelState.READY
-            logger.info("[RUNTIME] ASR and TTS models ready. Ollama warming up in background.")
+            logger.info(
+                "[RUNTIME] ASR and TTS models ready. Ollama warming up in background."
+            )
 
         except Exception as e:
-            logger.error(f"[RUNTIME] Failed to load local speech models: {e}", exc_info=True)
+            logger.error(
+                f"[RUNTIME] Failed to load local speech models: {e}", exc_info=True
+            )
             self.state = ModelState.FAILED
             self.whisper_model = None
             self.kokoro_model = None
@@ -193,6 +237,7 @@ class InferenceRuntimeManager:
         gc.collect()
         try:
             import torch
+
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 logger.info("[RUNTIME] CUDA VRAM cache cleared successfully.")
@@ -201,6 +246,7 @@ class InferenceRuntimeManager:
 
         self.state = ModelState.UNLOADED
         logger.info("[RUNTIME] Inference runtime stopped and memory released.")
+
 
 # Expose a singleton instance for global runtime management
 inference_runtime_manager = InferenceRuntimeManager()

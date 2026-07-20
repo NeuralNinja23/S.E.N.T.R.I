@@ -13,6 +13,7 @@ events: deque[TaskEvent] = deque(maxlen=1000)
 # The queue for the single background worker to pull from (contains task_ids)
 task_queue: asyncio.Queue[str] = asyncio.Queue()
 
+
 class RuntimeState:
     READY = "READY"
     LISTENING = "LISTENING"
@@ -20,6 +21,7 @@ class RuntimeState:
     SPEAKING = "SPEAKING"
     STANDBY = "STANDBY"
     WAKING = "WAKING"
+
 
 class RuntimeStore:
     def __init__(self):
@@ -39,7 +41,9 @@ class RuntimeStore:
         if source == "user":
             self.last_activity_time = time.time()
 
+
 runtime_store = RuntimeStore()
+
 
 class RuntimeEvents:
     def __init__(self):
@@ -65,5 +69,5 @@ class RuntimeEvents:
                 except Exception:
                     pass
 
-runtime_events = RuntimeEvents()
 
+runtime_events = RuntimeEvents()

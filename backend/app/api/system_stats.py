@@ -1,4 +1,5 @@
 """Real system telemetry endpoint using psutil + nvidia-smi."""
+
 import time
 import threading
 import psutil
@@ -19,7 +20,10 @@ def _get_gpu_stats() -> dict:
     try:
         result = subprocess.run(
             "nvidia-smi --query-gpu=utilization.gpu,temperature.gpu --format=csv,noheader,nounits",
-            capture_output=True, text=True, shell=True, timeout=3
+            capture_output=True,
+            text=True,
+            shell=True,
+            timeout=3,
         )
         if result.returncode == 0 and result.stdout.strip():
             parts = result.stdout.strip().split(",")
@@ -82,8 +86,8 @@ def system_stats():
     try:
         disk_path = "C:\\" if platform.system() == "Windows" else "/"
         disk = psutil.disk_usage(disk_path)
-        disk_total = round(disk.total / (1024 ** 3))
-        disk_used = round(disk.used / (1024 ** 3))
+        disk_total = round(disk.total / (1024**3))
+        disk_used = round(disk.used / (1024**3))
         disk_percent = round(disk.percent, 1)
     except Exception:
         pass

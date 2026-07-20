@@ -31,6 +31,7 @@ Architecture Decision Records (ADRs) document the **why** behind significant des
 | [ADR-0010](ADR-0010.md) | Centralized Response Cleaning | Accepted |
 | [ADR-0011](ADR-0011.md) | Deterministic Memory Deletion Interceptor | Accepted |
 | [ADR-0012](ADR-0012.md) | Task State Pausing and Telemetry Concurrency Safety | Accepted |
+| [ADR-0013](ADR-0013.md) | Capability-Based Backend Structure and API Layer Decomposition | Accepted |
 
 ---
 

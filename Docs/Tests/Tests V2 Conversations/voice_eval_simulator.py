@@ -14,10 +14,10 @@ from dotenv import load_dotenv
 load_dotenv(BACKEND_DIR / ".env")
 
 from app.runtime.model_runtime import inference_runtime_manager
-from app.conversation.streaming_pipeline.pipeline import ConversationRuntime
-from app.memory.contracts import MemoryEntry, MemoryQuery
-from app.memory.runtime import MemoryRuntime
-from app.memory.context_builder import MemoryContextBuilder
+from app.capability_2.streaming_pipeline.pipeline import ConversationRuntime
+from app.capability_1.core.contracts import MemoryEntry, MemoryQuery
+from app.capability_1.core.runtime import MemoryRuntime
+from app.capability_1.core.context_builder import MemoryContextBuilder
 
 USER_TRANSCRIPTS = [
     # Phase 1: Greetings & Identity checks
@@ -144,8 +144,8 @@ async def run_turn(runtime, mem_runtime, turn_idx: int, history: list) -> dict:
         print("\n[DB EVENT] Turn 30: Deleted Roommate 'Rohan' from DB.")
 
     # Intercept Retrieved Memories and Context Builder Output to verify what is fed
-    from app.conversation.intent_analysis import IntentAnalyzer
-    from app.conversation.retrieval_planner import RetrievalPlanner
+    from app.capability_2.routing.intent_analysis import IntentAnalyzer
+    from app.capability_2.routing.retrieval_planner import RetrievalPlanner
     analyzer = IntentAnalyzer()
     planner = RetrievalPlanner()
     intent = analyzer.analyze(query_text)

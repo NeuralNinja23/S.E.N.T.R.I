@@ -16,7 +16,7 @@ TTS_PROVIDER = os.getenv("TTS_PROVIDER", "kokoro")
 TTS_SPEAKER_VOICE = os.getenv("TTS_SPEAKER_VOICE", "bm_george")
 
 # Language Settings (Bug #10 + Bug #24: configurable instead of hardcoded)
-ASR_LANGUAGE = os.getenv("ASR_LANGUAGE", "en")   # Language code for Faster-Whisper ASR
+ASR_LANGUAGE = os.getenv("ASR_LANGUAGE", "en")  # Language code for Faster-Whisper ASR
 TTS_LANGUAGE = os.getenv("TTS_LANGUAGE", "en-us")  # Language code for Kokoro TTS
 
 
@@ -30,7 +30,7 @@ STANDBY_TIMEOUT_SECONDS = 900  # 15 minutes of inactivity before auto-standby
 # Memory Database Configuration
 MEMORY_DB_PATH = os.getenv(
     "MEMORY_DB_PATH",
-    str(Path(__file__).resolve().parent / "Sentri" / "storage" / "sentri_memory.db")
+    str(Path(__file__).resolve().parent / "Sentri" / "storage" / "sentri_memory.db"),
 )
 
 
@@ -43,16 +43,21 @@ def get_system_instruction() -> str:
     except FileNotFoundError:
         return "You are SENTRI, a highly sophisticated digital assistant."
 
+
 import platform
+
 
 def get_os() -> str:
     return platform.system()
 
+
 def is_windows() -> bool:
     return get_os() == "Windows"
 
+
 def is_mac() -> bool:
     return get_os() == "Darwin"
+
 
 def is_linux() -> bool:
     return get_os() == "Linux"

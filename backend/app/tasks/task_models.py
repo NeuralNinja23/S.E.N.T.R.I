@@ -2,10 +2,12 @@ from enum import Enum
 from pydantic import BaseModel, Field
 from datetime import datetime
 
+
 class TaskPriority(str, Enum):
     HIGH = "HIGH"
     NORMAL = "NORMAL"
     LOW = "LOW"
+
 
 class TaskStatus(str, Enum):
     PENDING = "PENDING"
@@ -14,6 +16,7 @@ class TaskStatus(str, Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     CANCELLED = "CANCELLED"
+
 
 class Task(BaseModel):
     id: str
@@ -28,7 +31,8 @@ class Task(BaseModel):
     result: str | None = None
     created_at: datetime
     updated_at: datetime
-    
+
+
 class TaskEvent(BaseModel):
     task_id: str
     type: str  # e.g., "TASK_COMPLETED", "TASK_FAILED", "TASK_STARTED"

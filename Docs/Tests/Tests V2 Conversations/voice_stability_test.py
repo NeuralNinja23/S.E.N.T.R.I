@@ -14,11 +14,11 @@ from dotenv import load_dotenv
 load_dotenv(BACKEND_DIR / ".env")
 
 from app.runtime.model_runtime import inference_runtime_manager
-from app.conversation.streaming_pipeline.pipeline import ConversationRuntime
-from app.memory.contracts import MemoryEntry, MemoryQuery
-from app.memory.runtime import MemoryRuntime
-from app.memory.context_builder import MemoryContextBuilder
-from app.conversation.adapter import ConversationAdapter
+from app.capability_2.streaming_pipeline.pipeline import ConversationRuntime
+from app.capability_1.core.contracts import MemoryEntry, MemoryQuery
+from app.capability_1.core.runtime import MemoryRuntime
+from app.capability_1.core.context_builder import MemoryContextBuilder
+from app.capability_2.infra.adapter import ConversationAdapter
 
 # We will dynamically generate Nisarg's responses using Ollama
 async def generate_human_query(last_sentri_response: str, history: list) -> str:

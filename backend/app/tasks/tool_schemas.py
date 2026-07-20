@@ -11,12 +11,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "The directory path to list. Defaults to '.' (root directory)."
+                        "description": "The directory path to list. Defaults to '.' (root directory).",
                     }
                 },
-                "required": []
-            }
-        }
+                "required": [],
+            },
+        },
     },
     {
         "type": "function",
@@ -28,32 +28,28 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "The relative or absolute path of the file to read."
+                        "description": "The relative or absolute path of the file to read.",
                     },
                     "start_line": {
                         "type": "integer",
-                        "description": "The starting line number to read (1-indexed). Defaults to 1."
+                        "description": "The starting line number to read (1-indexed). Defaults to 1.",
                     },
                     "end_line": {
                         "type": "integer",
-                        "description": "The ending line number to read (inclusive). Defaults to 800."
-                    }
+                        "description": "The ending line number to read (inclusive). Defaults to 800.",
+                    },
                 },
-                "required": ["path"]
-            }
-        }
+                "required": ["path"],
+            },
+        },
     },
     {
         "type": "function",
         "function": {
             "name": "get_file_tree",
             "description": "Returns a flat JSON list of all file paths in the entire codebase workspace.",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
     },
     {
         "type": "function",
@@ -65,17 +61,17 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "The text pattern or string to look for."
+                        "description": "The text pattern or string to look for.",
                     },
                     "search_type": {
                         "type": "string",
                         "enum": ["content", "filename"],
-                        "description": "Search by matching file contents ('content') or file names ('filename'). Defaults to 'content'."
-                    }
+                        "description": "Search by matching file contents ('content') or file names ('filename'). Defaults to 'content'.",
+                    },
                 },
-                "required": ["query"]
-            }
-        }
+                "required": ["query"],
+            },
+        },
     },
     {
         "type": "function",
@@ -87,24 +83,20 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "The path to the file to parse."
+                        "description": "The path to the file to parse.",
                     }
                 },
-                "required": ["file_path"]
-            }
-        }
+                "required": ["file_path"],
+            },
+        },
     },
     {
         "type": "function",
         "function": {
             "name": "explain_architecture",
             "description": "Generates a high-level JSON map showing components, services, and configuration files of the Sentri project.",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
     },
     {
         "type": "function",
@@ -116,12 +108,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "module_name": {
                         "type": "string",
-                        "description": "The name of the module or component to inspect."
+                        "description": "The name of the module or component to inspect.",
                     }
                 },
-                "required": ["module_name"]
-            }
-        }
+                "required": ["module_name"],
+            },
+        },
     },
     {
         "type": "function",
@@ -133,12 +125,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "resource_path": {
                         "type": "string",
-                        "description": "The resource path to access."
+                        "description": "The resource path to access.",
                     }
                 },
-                "required": ["resource_path"]
-            }
-        }
+                "required": ["resource_path"],
+            },
+        },
     },
     {
         "type": "function",
@@ -150,12 +142,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "The file path to open."
+                        "description": "The file path to open.",
                     }
                 },
-                "required": ["file_path"]
-            }
-        }
+                "required": ["file_path"],
+            },
+        },
     },
     {
         "type": "function",
@@ -167,12 +159,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "The file path to open."
+                        "description": "The file path to open.",
                     }
                 },
-                "required": ["file_path"]
-            }
-        }
+                "required": ["file_path"],
+            },
+        },
     },
     {
         "type": "function",
@@ -184,12 +176,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "The search query to look up on the web."
+                        "description": "The search query to look up on the web.",
                     }
                 },
-                "required": ["query"]
-            }
-        }
+                "required": ["query"],
+            },
+        },
     },
     {
         "type": "function",
@@ -201,16 +193,19 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "fact": {
                         "type": "string",
-                        "description": "The clean, factual sentence about the user to remember."
+                        "description": "The clean, factual sentence about the user to remember.",
                     },
                     "category": {
                         "type": "string",
-                        "description": "The memory category for this fact (e.g. 'Identity', 'Career', 'Preference', 'Goal', 'Lifestyle', 'Project')."
-                    }
+                        "description": "The memory category for this fact (e.g. 'Identity', 'Career', 'Preference', 'Goal', 'Lifestyle', 'Project').",
+                    },
                 },
-                "required": ["fact", "category"]  # Bug #30: category was missing — caused TypeError on every tool call
-            }
-        }
+                "required": [
+                    "fact",
+                    "category",
+                ],  # Bug #30: category was missing — caused TypeError on every tool call
+            },
+        },
     },
     {
         "type": "function",
@@ -222,12 +217,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "The search terms or keyword."
+                        "description": "The search terms or keyword.",
                     }
                 },
-                "required": ["query"]
-            }
-        }
+                "required": ["query"],
+            },
+        },
     },
     {
         "type": "function",
@@ -239,11 +234,11 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "The keyword or term describing what information to delete (e.g. 'Hospitality', 'Rohan', 'favorite color')."
+                        "description": "The keyword or term describing what information to delete (e.g. 'Hospitality', 'Rohan', 'favorite color').",
                     }
                 },
-                "required": ["query"]
-            }
-        }
-    }
+                "required": ["query"],
+            },
+        },
+    },
 ]

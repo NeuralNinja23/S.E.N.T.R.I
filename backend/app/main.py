@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 import asyncio
 import logging
 
+
 # Filter out /api/system-stats from uvicorn access logs
 class EndpointFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -19,13 +20,15 @@ class EndpointFilter(logging.Filter):
                     return False
         return True
 
+
 logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
 
 from app.api.websocket import router as websocket_router
 from app.api.system_stats import router as system_stats_router
-from app.api.upload import router as upload_router
+from app.capability_1.api.upload import router as upload_router
 from app.runtime.model_runtime import inference_runtime_manager
 from app.runtime.task_runtime import task_worker_loop
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,12 +42,13 @@ async def lifespan(app: FastAPI):
     app.state.tool_executor = ThreadPoolExecutor(max_workers=8)
 
     yield
-    
+
     # Terminate Inference Runtime Daemon
     inference_runtime_manager.stop()
 
     task_loop.cancel()
     app.state.tool_executor.shutdown(wait=True)
+
 
 app = FastAPI(title="SENTRI Voice API", lifespan=lifespan)
 
@@ -61,7 +65,7 @@ app.include_router(websocket_router)
 app.include_router(system_stats_router)
 app.include_router(upload_router)
 
+
 @app.get("/")
 def read_root():
     return {"message": "SENTRI Voice Backend Online"}
-

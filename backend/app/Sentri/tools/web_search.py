@@ -27,15 +27,36 @@ _WIKIPEDIA_MIN_TIMEOUT_SEC = 0.5
 
 # WMO Weather interpretation codes
 WMO_CODES = {
-    0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
-    45: "Foggy", 48: "Depositing rime fog", 51: "Light drizzle", 53: "Moderate drizzle",
-    55: "Dense drizzle", 56: "Light freezing drizzle", 57: "Dense freezing drizzle",
-    61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain", 66: "Light freezing rain",
-    67: "Heavy freezing rain", 71: "Slight snow", 73: "Moderate snow", 75: "Heavy snow",
-    77: "Snow grains", 80: "Slight rain showers", 81: "Moderate rain showers",
-    82: "Violent rain showers", 85: "Slight snow showers", 86: "Heavy snow showers",
-    95: "Thunderstorm", 96: "Thunderstorm with slight hail", 99: "Thunderstorm with heavy hail"
+    0: "Clear sky",
+    1: "Mainly clear",
+    2: "Partly cloudy",
+    3: "Overcast",
+    45: "Foggy",
+    48: "Depositing rime fog",
+    51: "Light drizzle",
+    53: "Moderate drizzle",
+    55: "Dense drizzle",
+    56: "Light freezing drizzle",
+    57: "Dense freezing drizzle",
+    61: "Slight rain",
+    63: "Moderate rain",
+    65: "Heavy rain",
+    66: "Light freezing rain",
+    67: "Heavy freezing rain",
+    71: "Slight snow",
+    73: "Moderate snow",
+    75: "Heavy snow",
+    77: "Snow grains",
+    80: "Slight rain showers",
+    81: "Moderate rain showers",
+    82: "Violent rain showers",
+    85: "Slight snow showers",
+    86: "Heavy snow showers",
+    95: "Thunderstorm",
+    96: "Thunderstorm with slight hail",
+    99: "Thunderstorm with heavy hail",
 }
+
 
 def _is_public_url(url: str) -> bool:
     """Defence against SSRF: check if URL resolves to a private or local IP."""
@@ -51,8 +72,14 @@ def _is_public_url(url: str) -> bool:
     # Literal IP check
     try:
         ip = ipaddress.ip_address(host)
-        return not (ip.is_private or ip.is_loopback or ip.is_link_local
-                    or ip.is_reserved or ip.is_multicast or ip.is_unspecified)
+        return not (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or ip.is_unspecified
+        )
     except ValueError:
         pass
     # Hostname resolution check
@@ -65,30 +92,42 @@ def _is_public_url(url: str) -> bool:
         try:
             addr = info[4][0]
             ip = ipaddress.ip_address(addr)
-            if (ip.is_private or ip.is_loopback or ip.is_link_local
-                    or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+            if (
+                ip.is_private
+                or ip.is_loopback
+                or ip.is_link_local
+                or ip.is_reserved
+                or ip.is_multicast
+                or ip.is_unspecified
+            ):
                 logger.warning(f"Rejecting {url}: resolves to non-public {addr}")
                 return False
         except Exception:
             return False
     return True
 
-def _fetch_page_content(url: str, max_chars: int = 1500, timeout: float = _FETCH_TIMEOUT_SEC) -> Optional[str]:
+
+def _fetch_page_content(
+    url: str, max_chars: int = 1500, timeout: float = _FETCH_TIMEOUT_SEC
+) -> Optional[str]:
     """Fetch and extract text content from a public URL."""
     if not _is_public_url(url):
         return None
     try:
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
         }
         current_url = url
         response = None
         for _ in range(_MAX_REDIRECTS + 1):
             response = requests.get(
-                current_url, headers=headers, timeout=timeout,
-                allow_redirects=False, stream=True,
+                current_url,
+                headers=headers,
+                timeout=timeout,
+                allow_redirects=False,
+                stream=True,
             )
             if response.is_redirect or response.is_permanent_redirect:
                 next_url = response.headers.get("Location", "")
@@ -118,13 +157,29 @@ def _fetch_page_content(url: str, max_chars: int = 1500, timeout: float = _FETCH
                 break
         body = b"".join(chunks)
 
-        soup = BeautifulSoup(body, 'html.parser')
+        soup = BeautifulSoup(body, "html.parser")
         # Remove non-content elements
-        for element in soup(["script", "style", "meta", "link", "noscript", "nav", "footer", "header", "aside"]):
+        for element in soup(
+            [
+                "script",
+                "style",
+                "meta",
+                "link",
+                "noscript",
+                "nav",
+                "footer",
+                "header",
+                "aside",
+            ]
+        ):
             element.decompose()
 
-        text = soup.get_text(separator='\n', strip=True)
-        lines = [line.strip() for line in text.split('\n') if line.strip() and len(line.strip()) > 3]
+        text = soup.get_text(separator="\n", strip=True)
+        lines = [
+            line.strip()
+            for line in text.split("\n")
+            if line.strip() and len(line.strip()) > 3
+        ]
 
         # Deduplicate consecutive lines
         deduped = []
@@ -134,7 +189,7 @@ def _fetch_page_content(url: str, max_chars: int = 1500, timeout: float = _FETCH
                 deduped.append(line)
                 prev_line = line
 
-        content = '\n'.join(deduped)
+        content = "\n".join(deduped)
         if len(content) > max_chars:
             content = content[:max_chars] + "..."
 
@@ -144,14 +199,17 @@ def _fetch_page_content(url: str, max_chars: int = 1500, timeout: float = _FETCH
         logger.warning(f"Failed to fetch content from {url}: {e}")
         return None
 
+
 def _extract_content_tokens(text: str) -> List[str]:
     """Split text into lowercase alphanumeric tokens."""
     if not text:
         return []
     return [
-        tok for tok in re.findall(r"\w+", text.lower(), flags=re.UNICODE)
+        tok
+        for tok in re.findall(r"\w+", text.lower(), flags=re.UNICODE)
         if len(tok) >= _QUERY_TOKEN_MIN_LEN
     ]
+
 
 def _score_extract_against_query(extract: str, query_tokens: set) -> int:
     """Score extract relevance based on query token overlap."""
@@ -160,7 +218,12 @@ def _score_extract_against_query(extract: str, query_tokens: set) -> int:
     extract_tokens = set(_extract_content_tokens(extract))
     return len(query_tokens & extract_tokens)
 
-def _cascade_fetch(candidates: List[Tuple[str, str]], wall_clock_sec: float = _CASCADE_WALL_CLOCK_SEC, query: Optional[str] = None) -> Optional[str]:
+
+def _cascade_fetch(
+    candidates: List[Tuple[str, str]],
+    wall_clock_sec: float = _CASCADE_WALL_CLOCK_SEC,
+    query: Optional[str] = None,
+) -> Optional[str]:
     """Fetch top candidates in parallel under a shared wall-clock cap."""
     if not candidates:
         return None
@@ -179,10 +242,13 @@ def _cascade_fetch(candidates: List[Tuple[str, str]], wall_clock_sec: float = _C
                 except Exception as e:
                     logger.warning(f"Fetch raised for result #{rank + 1}: {e}")
                     results_by_rank[rank] = None
-                
+
                 # Short-circuit if top-1 returns successfully and is relevant
                 top = results_by_rank.get(0)
-                if top and (not query_tokens or _score_extract_against_query(top, query_tokens) > 0):
+                if top and (
+                    not query_tokens
+                    or _score_extract_against_query(top, query_tokens) > 0
+                ):
                     break
         except TimeoutError:
             logger.warning(f"Cascade wall-clock {wall_clock_sec}s exceeded.")
@@ -194,10 +260,13 @@ def _cascade_fetch(candidates: List[Tuple[str, str]], wall_clock_sec: float = _C
         if query_tokens:
             score = _score_extract_against_query(content, query_tokens)
             if score == 0:
-                logger.info(f"Skipping result #{rank + 1} as boilerplate (0 token overlap)")
+                logger.info(
+                    f"Skipping result #{rank + 1} as boilerplate (0 token overlap)"
+                )
                 continue
         return content
     return None
+
 
 def _brave_search(query: str, api_key: str, count: int = 5) -> List[Tuple[str, str]]:
     """Query Brave Search API."""
@@ -228,23 +297,37 @@ def _brave_search(query: str, api_key: str, count: int = 5) -> List[Tuple[str, s
         logger.warning(f"Brave Search failed: {msg}")
         return []
 
+
 def _wikipedia_request_timeout(deadline: Optional[float]) -> Optional[float]:
     if deadline is None:
         return _WIKIPEDIA_REQUEST_TIMEOUT_SEC
     import time
+
     remaining = deadline - time.monotonic()
     if remaining < _WIKIPEDIA_MIN_TIMEOUT_SEC:
         return None
     return min(_WIKIPEDIA_REQUEST_TIMEOUT_SEC, remaining)
 
-def _resolve_wikipedia_title(query: str, search_url: str, headers: Dict[str, str], deadline: Optional[float] = None) -> Optional[str]:
+
+def _resolve_wikipedia_title(
+    query: str,
+    search_url: str,
+    headers: Dict[str, str],
+    deadline: Optional[float] = None,
+) -> Optional[str]:
     timeout = _wikipedia_request_timeout(deadline)
     if timeout is None:
         return None
     try:
         search_resp = requests.get(
             search_url,
-            params={"action": "opensearch", "search": query, "limit": 1, "namespace": 0, "format": "json"},
+            params={
+                "action": "opensearch",
+                "search": query,
+                "limit": 1,
+                "namespace": 0,
+                "format": "json",
+            },
             headers=headers,
             timeout=timeout,
         )
@@ -263,7 +346,14 @@ def _resolve_wikipedia_title(query: str, search_url: str, headers: Dict[str, str
     try:
         fulltext_resp = requests.get(
             search_url,
-            params={"action": "query", "list": "search", "srsearch": query, "srlimit": 1, "srnamespace": 0, "format": "json"},
+            params={
+                "action": "query",
+                "list": "search",
+                "srsearch": query,
+                "srlimit": 1,
+                "srnamespace": 0,
+                "format": "json",
+            },
             headers=headers,
             timeout=timeout,
         )
@@ -277,7 +367,10 @@ def _resolve_wikipedia_title(query: str, search_url: str, headers: Dict[str, str
         logger.warning(f"Wikipedia fulltext search failed: {e}")
     return None
 
-def _wikipedia_summary(query: str, lang: str = "en", deadline: Optional[float] = None) -> Optional[Tuple[str, str, str]]:
+
+def _wikipedia_summary(
+    query: str, lang: str = "en", deadline: Optional[float] = None
+) -> Optional[Tuple[str, str, str]]:
     lang = (lang or "en").strip().lower() or "en"
     if not lang.isalpha() or not (2 <= len(lang) <= 3):
         lang = "en"
@@ -299,11 +392,16 @@ def _wikipedia_summary(query: str, lang: str = "en", deadline: Optional[float] =
             summary_data = summary_resp.json() or {}
             extract = (summary_data.get("extract") or "").strip()
             if extract:
-                page_url = (summary_data.get("content_urls") or {}).get("desktop", {}).get("page") or f"https://{lang}.wikipedia.org/wiki/{quote(title.replace(' ', '_'), safe='')}"
+                page_url = (summary_data.get("content_urls") or {}).get(
+                    "desktop", {}
+                ).get(
+                    "page"
+                ) or f"https://{lang}.wikipedia.org/wiki/{quote(title.replace(' ', '_'), safe='')}"
                 return (summary_data.get("title") or title, page_url, extract)
     except Exception as e:
         logger.warning(f"Wikipedia summary lookup failed: {e}")
     return None
+
 
 def web_search(search_query: str, lang: str = "en") -> str:
     """Executes a web search cascading from DuckDuckGo to Brave and Wikipedia fallback."""
@@ -314,7 +412,9 @@ def web_search(search_query: str, lang: str = "en") -> str:
     logger.info(f"Executing web search for: '{search_query}' (lang: {lang})")
 
     import time
+
     chain_deadline = time.monotonic() + _TOTAL_WALL_CLOCK_SEC
+
     def _budget_left() -> float:
         return max(0.0, chain_deadline - time.monotonic())
 
@@ -323,9 +423,14 @@ def web_search(search_query: str, lang: str = "en") -> str:
     try:
         ddg_instant_url = "https://api.duckduckgo.com/"
         instant_response = requests.get(
-            ddg_instant_url, 
-            params={"q": search_query, "format": "json", "no_html": "1", "skip_disambig": "1"}, 
-            timeout=4
+            ddg_instant_url,
+            params={
+                "q": search_query,
+                "format": "json",
+                "no_html": "1",
+                "skip_disambig": "1",
+            },
+            timeout=4,
         )
         if instant_response.status_code == 200:
             instant_data = instant_response.json()
@@ -348,37 +453,47 @@ def web_search(search_query: str, lang: str = "en") -> str:
     try:
         encoded_query = quote_plus(search_query)
         ddg_lite_url = f"https://lite.duckduckgo.com/lite/?q={encoded_query}"
-        headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
         ddg_response = requests.get(ddg_lite_url, headers=headers, timeout=6)
         body_bytes = ddg_response.content or b""
 
         # Detect anomaly CAPTCHA checks
-        if (ddg_response.status_code in (202, 400, 429)
-                or b"anomaly-modal" in body_bytes
-                or b"anomaly.js" in body_bytes):
+        if (
+            ddg_response.status_code in (202, 400, 429)
+            or b"anomaly-modal" in body_bytes
+            or b"anomaly.js" in body_bytes
+        ):
             ddg_rate_limited = True
             logger.warning("DuckDuckGo served a bot-challenge page. Search blocked.")
         elif ddg_response.status_code == 200:
-            soup = BeautifulSoup(body_bytes, 'html.parser')
-            links = soup.find_all('a', href=True)
+            soup = BeautifulSoup(body_bytes, "html.parser")
+            links = soup.find_all("a", href=True)
             result_count = 0
             for link in links:
                 if result_count >= 5:
                     break
-                href = link.get('href', '')
+                href = link.get("href", "")
                 title = link.get_text().strip()
                 actual_url = href
-                if href.startswith('//duckduckgo.com/l/') and 'uddg=' in href:
+                if href.startswith("//duckduckgo.com/l/") and "uddg=" in href:
                     try:
                         parsed = urlparse(href)
                         qs = parse_qs(parsed.query)
-                        if 'uddg' in qs:
-                            actual_url = unquote(qs['uddg'][0])
+                        if "uddg" in qs:
+                            actual_url = unquote(qs["uddg"][0])
                     except Exception:
                         pass
-                
-                if (href.startswith('http') and len(title) > 10 and 
-                        not any(skip in title.lower() for skip in ['settings', 'privacy', 'about', 'help'])):
+
+                if (
+                    href.startswith("http")
+                    and len(title) > 10
+                    and not any(
+                        skip in title.lower()
+                        for skip in ["settings", "privacy", "about", "help"]
+                    )
+                ):
                     result_count += 1
                     search_results.append(f"{result_count}. **{title}**")
                     search_results.append(f"   Link: {actual_url}")
@@ -395,12 +510,16 @@ def web_search(search_query: str, lang: str = "en") -> str:
         fetched_content = _cascade_fetch(
             result_urls[:3],
             wall_clock_sec=min(_CASCADE_WALL_CLOCK_SEC, _budget_left()),
-            query=search_query
+            query=search_query,
         )
 
     # 4. Fallback to Brave Search (if key is present in environment)
     brave_key = os.getenv("BRAVE_SEARCH_API_KEY", "")
-    need_fallback = not instant_results and not fetched_content and (ddg_rate_limited or not result_urls or fetch_attempted)
+    need_fallback = (
+        not instant_results
+        and not fetched_content
+        and (ddg_rate_limited or not result_urls or fetch_attempted)
+    )
     if need_fallback and brave_key and _budget_left() > 0:
         logger.info("Falling back to Brave Search...")
         brave_pairs = _brave_search(search_query, brave_key)
@@ -415,7 +534,7 @@ def web_search(search_query: str, lang: str = "en") -> str:
             fetched_content = _cascade_fetch(
                 brave_pairs[:3],
                 wall_clock_sec=min(_CASCADE_WALL_CLOCK_SEC, _budget_left()),
-                query=search_query
+                query=search_query,
             )
 
     # 5. Last resort fallback to Wikipedia
@@ -425,7 +544,7 @@ def web_search(search_query: str, lang: str = "en") -> str:
         if not wiki and lang != "en" and _budget_left() > 0:
             logger.info("Wikipedia localized search empty; retrying English...")
             wiki = _wikipedia_summary(search_query, lang="en", deadline=chain_deadline)
-        
+
         if wiki:
             title, url, extract = wiki
             fetched_content = extract
@@ -455,8 +574,12 @@ def web_search(search_query: str, lang: str = "en") -> str:
     else:
         all_results.append("🔍 **Search Information**")
         if ddg_rate_limited and not brave_key:
-            all_results.append("   Search engines blocked the automated request (CAPTCHA/bot-challenge).")
+            all_results.append(
+                "   Search engines blocked the automated request (CAPTCHA/bot-challenge)."
+            )
         else:
-            all_results.append(f"   I was unable to find current results for '{search_query}'.")
+            all_results.append(
+                f"   I was unable to find current results for '{search_query}'."
+            )
 
     return "\n".join(all_results)

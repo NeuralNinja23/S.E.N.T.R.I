@@ -5,30 +5,51 @@ import re
 # vendor-shaped tokens are matched before generic catches so the more
 # informative label wins.
 _REDACTION_RULES: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}", re.IGNORECASE), "[REDACTED_EMAIL]"),
+    (
+        re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}", re.IGNORECASE),
+        "[REDACTED_EMAIL]",
+    ),
     (re.compile(r"\b(?:\d[ -]*?){13,19}\b"), "[REDACTED_CARD]"),
     # Vendor-specific access keys (bare, no surrounding keyword required).
     (re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"), "[REDACTED_AWS_KEY]"),
-    (re.compile(r"\b(?:sk|pk|rk)_(?:live|test)_[A-Za-z0-9]{16,}\b"), "[REDACTED_STRIPE_KEY]"),
+    (
+        re.compile(r"\b(?:sk|pk|rk)_(?:live|test)_[A-Za-z0-9]{16,}\b"),
+        "[REDACTED_STRIPE_KEY]",
+    ),
     (re.compile(r"\bgh[pousr]_[A-Za-z0-9]{36,}\b"), "[REDACTED_GH_TOKEN]"),
     (re.compile(r"\bsk-[A-Za-z0-9]{32,}\b"), "[REDACTED_OPENAI_KEY]"),
     (re.compile(r"\bAIza[0-9A-Za-z_\-]{35}\b"), "[REDACTED_GOOG_KEY]"),
     # Authorisation headers — Bearer/Basic carry credentials in line.
-    (re.compile(r"Authorization:\s*Bearer\s+\S+", re.IGNORECASE), "Authorization: Bearer [REDACTED]"),
-    (re.compile(r"Authorization:\s*Basic\s+[A-Za-z0-9+/=]+", re.IGNORECASE), "Authorization: Basic [REDACTED]"),
+    (
+        re.compile(r"Authorization:\s*Bearer\s+\S+", re.IGNORECASE),
+        "Authorization: Bearer [REDACTED]",
+    ),
+    (
+        re.compile(r"Authorization:\s*Basic\s+[A-Za-z0-9+/=]+", re.IGNORECASE),
+        "Authorization: Basic [REDACTED]",
+    ),
     # Generic prefix catch — left after the vendor-specific rules
-    (re.compile(r"\b(AWS|GH|GCP|AZURE|xox[abpcr]-)[A-Za-z0-9_\-]{10,}\b", re.IGNORECASE), "[REDACTED_TOKEN]"),
+    (
+        re.compile(
+            r"\b(AWS|GH|GCP|AZURE|xox[abpcr]-)[A-Za-z0-9_\-]{10,}\b", re.IGNORECASE
+        ),
+        "[REDACTED_TOKEN]",
+    ),
     (re.compile(r"\b(?:eyJ[0-9A-Za-z._\-]+)\b"), "[REDACTED_JWT]"),
     # Keyword-anchored credentials — Bug #29: match quoted multi-word OR bare single-token values
-    (re.compile(
-        r'\b(pass(?:word)?|secret|token|apikey|api_key|'
-        r'(?:refresh|access|id|oauth)_?token|session(?:_?id)?|sid)'
-        r'\s*[:=]\s*(?:"[^"]*"|\'[^\']*\'|\S+)',
-        re.IGNORECASE,
-    ), r'\1=[REDACTED]'),
+    (
+        re.compile(
+            r"\b(pass(?:word)?|secret|token|apikey|api_key|"
+            r"(?:refresh|access|id|oauth)_?token|session(?:_?id)?|sid)"
+            r'\s*[:=]\s*(?:"[^"]*"|\'[^\']*\'|\S+)',
+            re.IGNORECASE,
+        ),
+        r"\1=[REDACTED]",
+    ),
     (re.compile(r"\b[0-9A-Fa-f]{32,}\b"), "[REDACTED_HEX]"),
     (re.compile(r"\b\d{6}\b(?=.*(otp|2fa|code))", re.IGNORECASE), "[REDACTED_OTP]"),
 ]
+
 
 def redact(text: str, max_len: int = 8000) -> str:
     scrubbed = text
@@ -38,6 +59,7 @@ def redact(text: str, max_len: int = 8000) -> str:
     if len(scrubbed) > max_len:
         scrubbed = scrubbed[:max_len]
     return scrubbed
+
 
 def scrub_secrets(text: str) -> str:
     """Apply the structural scrub rules without whitespace collapse or length cap."""
