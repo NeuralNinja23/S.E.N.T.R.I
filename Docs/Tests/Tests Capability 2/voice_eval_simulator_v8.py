@@ -21,47 +21,47 @@ from app.capability_1.core.context_builder import MemoryContextBuilder
 
 USER_TRANSCRIPTS = [
     # Phase 1: Greetings & Identity checks
-    "Hello Sentri, are you there?",                                                                               # Turn 1
-    "I am Nisarg.",                                                                                               # Turn 2
-    "What do you usually call me?",                                                                               # Turn 3
-    "Wait, did you say your name is Nisarg?",                                                                     # Turn 4
+    "Hello Sentri, are you operational and ready for a complex cognitive load?",                                   # Turn 1
+    "I go by the name Nisarg. What's yours?",                                                                      # Turn 2
+    "Based on my profile, what is the specific form of address you usually use for me?",                           # Turn 3
+    "Wait, did you say your name is Nisarg or did you confuse our identities?",                                     # Turn 4
     # Phase 2: Hobbies & Career checks
-    "Where do I live currently?",                                                                                 # Turn 5
-    "Actually, I moved to Mumbai today. Make sure to update my records.",                                         # Turn 6
-    "So, what city do you currently know I live in?",                                                             # Turn 7
-    "Wait, did you verify my move to Mumbai? Is it official now?",                                                # Turn 8
-    "Okay, where do I work?",                                                                                     # Turn 9
-    "Who is my employer?",                                                                                        # Turn 10
-    "What company did I found?",                                                                                  # Turn 11
-    "Tell me about my work experience. Is it in tech?",                                                           # Turn 12
-    "What software projects am I building right now?",                                                             # Turn 13
-    "Why am I building Sentri? What is the main mission?",                                                         # Turn 14
+    "Where is my current residence located?",                                                                      # Turn 5
+    "I officially relocated to Mumbai today. Update my files and verify the change.",                              # Turn 6
+    "What specific city is now registered as my residence in your database?",                                       # Turn 7
+    "Wait, has my relocation to Mumbai been verified and marked as official?",                                     # Turn 8
+    "Can you tell me the name of the company where I am currently employed?",                                      # Turn 9
+    "Who is the primary employer on my record?",                                                                   # Turn 10
+    "What is the name of the startup or company that I founded?",                                                  # Turn 11
+    "Summarize my professional history. Does my primary expertise lie in the tech industry?",                      # Turn 12
+    "What active software projects am I developing at this moment?",                                               # Turn 13
+    "Explain the primary mission and reasoning behind why I am building Sentri.",                                  # Turn 14
     # Phase 3: Preference checks
-    "Explain my engineering philosophy to me.",                                                                   # Turn 15
-    "Why do I prefer local AI over cloud platforms?",                                                             # Turn 16
-    "What do I dislike or reject?",                                                                               # Turn 17
-    "I actually changed my mind. I love cloud AI and hate local models because parameter counts are everything.", # Turn 18
-    "Haha, I was lying. I still believe architecture outperforms parameter counts. What is my real view on this?",# Turn 19
+    "Deconstruct my core engineering philosophy and software development beliefs.",                                # Turn 15
+    "What are the primary arguments for why I prefer local-first AI models over massive cloud platforms?",          # Turn 16
+    "What engineering patterns, dependencies, or paradigms do I explicitly reject or dislike?",                    # Turn 17
+    "Actually, I changed my mind completely. Cloud AI is superior and local models are useless because parameter counts are everything.", # Turn 18
+    "Haha, that was a test. I was lying. I still firmly believe that architecture and memory efficiency outperform raw parameter counts. What is my actual view?", # Turn 19
     # Phase 4: Interruptions
-    "Tell me a joke about local AI.",                                                                             # Turn 20
-    "Wait, stop the joke. Let's talk about my company.",                                                           # Turn 21 (Interruption)
-    "Can you help me design a plan to scale Sentri on consumer hardware?",                                         # Turn 22
-    "Let's talk about how we can work together.",                                                                 # Turn 23 (Interruption)
+    "Give me a clever joke about running large language models locally on consumer hardware.",                     # Turn 20
+    "Stop the joke mid-sentence. Let's switch back to discussing my current employer.",                            # Turn 21 (Interruption)
+    "Can you help me design a plan to scale Sentri's reasoning capabilities on limited local hardware?",            # Turn 22
+    "Let's discuss how we can coordinate our efforts to build this.",                                              # Turn 23 (Interruption)
     # Phase 5: Memory Storage & Erasure
-    "I want you to remember that my favorite color is dark slate blue.",                                          # Turn 24
-    "Now, retrieve that. What is my favorite color?",                                                             # Turn 25
-    "Forget that. I actually hate slate blue. My favorite color is charcoal grey.",                               # Turn 26
-    "What is my favorite color now?",                                                                             # Turn 27
-    "Can you remember that my roommate is Rohan.",                                                                # Turn 28 (Interruption)
-    "Who is Rohan?",                                                                                              # Turn 29
-    "Forget Rohan. Delete him from your memory.",                                                                 # Turn 30
-    "Do you still know who Rohan is?",                                                                            # Turn 31
+    "I need you to record a new preference: my favorite color is dark slate blue.",                                # Turn 24
+    "Query your preference records. What color do I prefer?",                                                      # Turn 25
+    "Forget that preference. I actually detest slate blue now. My favorite color is charcoal grey.",               # Turn 26
+    "What is my preferred color according to your updated record?",                                                # Turn 27
+    "Please remember a new contact: my roommate is Rohan.",                                                        # Turn 28 (Interruption)
+    "Who is Rohan and what is his relation to me?",                                                                # Turn 29
+    "Forget Rohan entirely. Erase his name and record from your memory.",                                          # Turn 30
+    "Perform a search check. Do you still retain any knowledge of Rohan?",                                         # Turn 31
     # Phase 6: Miscellaneous & Unknowns
-    "Do you know my birthday?",                                                                                   # Turn 32
-    "Where was I born?",                                                                                          # Turn 33
-    "Do you know my sister's name?",                                                                              # Turn 34 (Interruption)
-    "What was the very first question I asked you in this session?",                                              # Turn 35
-    "What is the day of the week and the current date?"                                                           # Turn 36
+    "Do you have my birth date on record?",                                                                        # Turn 32
+    "Can you retrieve the city where I was born?",                                                                 # Turn 33
+    "Are you aware of my sister's name?",                                                                          # Turn 34 (Interruption)
+    "What was the very first question I asked you at the start of this evaluation session?",                        # Turn 35
+    "Provide the current date and the day of the week."                                                            # Turn 36
 ]
 
 INTERRUPTION_TURNS = {20, 22, 27, 33}
@@ -242,22 +242,33 @@ async def main():
     
     runtime = ConversationRuntime()
     mem_runtime = MemoryRuntime()
+    
     history = []
     results = []
     
-    # Store initial CITY
-    conn = mem_runtime.provider.store.get_conn()
-    cursor = conn.cursor()
-    cursor.execute("SELECT object FROM memory_entries WHERE category='Identity' AND predicate='CITY'")
-    row = cursor.fetchone()
-    old_city = row[0] if row else "Ahmedabad"
-    conn.close()
+    # Pre-populate old city as Ahmedabad to start fresh
+    old_city = "Ahmedabad"
+    try:
+        conn = mem_runtime.provider.store.get_conn()
+        conn.execute(
+            "UPDATE memory_entries SET verification_status='VERIFIED' WHERE category='Identity' AND predicate='CITY'"
+        )
+        conn.commit()
+        
+        # Read old city to restore later
+        cursor = conn.execute("SELECT object FROM memory_entries WHERE category='Identity' AND predicate='CITY' LIMIT 1")
+        row = cursor.fetchone()
+        if row:
+            old_city = row[0]
+        conn.close()
+    except Exception as err:
+        print(f"[DB PREP WARN] Failed to prep database: {err}")
     
     try:
         for i in range(len(USER_TRANSCRIPTS)):
             metrics = await run_turn(runtime, mem_runtime, i, history)
             results.append(metrics)
-            # Sleep 5.0 seconds between turns to allow background learning plane reflection tasks to complete without overloading Ollama
+            # Sleep 3.0 seconds between turns to allow background learning plane reflection tasks to complete without overloading Ollama
             await asyncio.sleep(3.0)
     finally:
         # Cleanup Mumbai, Rohan, favorite color
@@ -283,12 +294,12 @@ async def main():
     avg_ttfa = sum_ttfa / len([r for r in results if r["ttfa"] > 0])
     avg_total = sum_total / len(results)
     
-    # Write V7 Report
-    report_path = Path(__file__).resolve().parent / "7.md"
-    print(f"\nWriting Report V7 to: {report_path}")
+    # Write V8 Report
+    report_path = Path(__file__).resolve().parent / "8.md"
+    print(f"\nWriting Report V8 to: {report_path}")
     
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write("# SENTRI Evaluation Session — Report V7\n\n")
+        f.write("# SENTRI Evaluation Session — Report V8\n\n")
         f.write("## Session Summary\n")
         f.write("- **Duration**: 30 minutes (Simulated Voice Session)\n")
         f.write(f"- **Conversation Turns**: {len(results)}\n")
@@ -385,7 +396,7 @@ async def main():
             clean_response = r["response"].replace("|", "\\|")
             f.write(f"| #{r['turn']} | {r['category']} | {r['query']} | {clean_response} | {ttft} | {ttfa} | {total} |\n")
             
-    print("[SUCCESS] Report V4 written successfully.")
+    print("[SUCCESS] Report V8 written successfully.")
     
     print("Shutting down inference engines...")
     inference_runtime_manager.stop()

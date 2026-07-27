@@ -172,18 +172,20 @@ async def voice_websocket(websocket: WebSocket):
                             f"Client sample rate configured: {client_sample_rate} Hz"
                         )
 
-                    elif p_type == "command":
-                        cmd_text = payload.get("text", "")
+                    elif p_type in ("command", "text"):
+                        cmd_text = payload.get("data") or payload.get("text", "")
+                        if payload.get("history") and isinstance(payload["history"], list):
+                            session.conversation_history = payload["history"]
                         if cmd_text:
                             if cmd_text.upper().strip() == "ENTER_STANDBY":
                                 runtime_service.standby()
                             elif cmd_text.upper().strip() == "EXIT_STANDBY":
                                 asyncio.create_task(runtime_service.wake(websocket))
                             else:
-                                # Bug #9: Store task reference so stop command can cancel it
                                 session.text_task = asyncio.create_task(
                                     process_user_text_turn(cmd_text, websocket, session)
                                 )
+
 
                     elif p_type == "governance":
                         cmd = payload.get("command")
@@ -220,7 +222,24 @@ async def voice_websocket(websocket: WebSocket):
                         elif cmd == "exit_standby":
                             asyncio.create_task(runtime_service.wake(websocket))
 
+                    elif p_type == "interrupt":
+                        logger.info("Interrupt request received from client.")
+                        session.speaking = False
+                        if (
+                            hasattr(session, "text_task")
+                            and session.text_task
+                            and not session.text_task.done()
+                        ):
+                            session.text_task.cancel()
+                            try:
+                                await session.text_task
+                            except asyncio.CancelledError:
+                                pass
+                            session.text_task = None
+                        await safe_send_json(websocket, {"type": "state", "state": "READY"})
+
                     elif p_type == "turn_complete":
+
                         audio_turn_data = session.consume_speech_buffer()
                         if len(audio_turn_data) > 0:
                             # Trigger processing of this voice turn

@@ -92,14 +92,14 @@ async def process_user_turn(
                 accumulated_text.append(chunk["data"])
             elif chunk["type"] == "user_transcript":
                 session.append_user_turn(chunk["data"])
-                print(f"\n\n🗣️  [USER SPEAK]: {chunk['data']}\n", flush=True)
+                print(f"\n\n[USER SPEAK]: {chunk['data']}\n", flush=True)
                 await safe_send_json(websocket, {"type": "user", "data": chunk["data"]})
 
         final_response = "".join(accumulated_text).strip()
         # Send the complete response as a single message to the chatbox
         if final_response:
             await safe_send_json(websocket, {"type": "text", "data": final_response})
-        print(f"🤖 [SENTRI SPEAK]: {final_response}\n", flush=True)
+        print(f"[SENTRI SPEAK]: {final_response}\n", flush=True)
         session.end_turn(final_text=final_response)
 
         # Log latency results
@@ -128,7 +128,7 @@ async def process_user_text_turn(
     session.append_user_turn(text_query)
     try:
         # Send USER log to frontend
-        print(f"\n\n⌨️  [USER TEXT]: {text_query}\n", flush=True)
+        print(f"\n\n[USER TEXT]: {text_query}\n", flush=True)
         await safe_send_json(websocket, {"type": "user", "data": text_query})
 
         # Delegate memory erasure handling to Capability 1 Memory API
@@ -146,8 +146,24 @@ async def process_user_text_turn(
 
         # ── Intent → Memory retrieval (same as voice path) ──────────
         try:
+            from app.capability_2.learning.behavior.state import BehavioralStateManager
+            from app.capability_2.learning.adaptation.adapter import BehavioralAdapter
+
+            behavior_state = BehavioralStateManager().get_state()
+        except Exception as e:
+            logger.error(f"Failed to load behavioral state in text path: {e}")
+            behavior_state = None
+
+        try:
             intent = _intent_analyzer.analyze(text_query)
             categories, budget = _retrieval_planner.plan(intent)
+            
+            if behavior_state:
+                try:
+                    budget = BehavioralAdapter.adapt_planning_budget(budget, behavior_state)
+                except Exception as e:
+                    logger.error(f"Failed to adapt planning budget: {e}")
+
             warm_profile_block = retrieve_memory_context(categories, budget)
         except Exception as planning_err:
             logger.error(f"Failed in planning/retrieval: {planning_err}")
@@ -155,6 +171,12 @@ async def process_user_text_turn(
 
         # ── System prompt (same as voice path: sentri.md + time + cache_bypass) ──
         final_instruction = _system_prompt_provider.build()
+        if behavior_state:
+            try:
+                final_instruction = BehavioralAdapter.adapt_prompt(final_instruction, behavior_state)
+            except Exception as e:
+                logger.error(f"Failed to adapt system prompt: {e}")
+
         if warm_profile_block:
             final_instruction += "\n\n" + warm_profile_block
 
@@ -190,11 +212,33 @@ async def process_user_text_turn(
             "ascii"
         )
         logger.info(f"Ollama response: {safe_response_log}")
-        print(f"🤖 [SENTRI TEXT]: {response_text}\n", flush=True)
+        print(f"[SENTRI TEXT]: {response_text}\n", flush=True)
         session.end_turn(final_text=response_text)
 
         # Log text output to frontend
         await safe_send_json(websocket, {"type": "text", "data": response_text})
+
+        # ── Learning Plane: Background Reflection & Evaluation ────────
+        # Same async-fire-and-forget pattern as the voice pipeline.
+        try:
+            from app.capability_2.learning.controller import LearningController
+
+            async def _background_reflect_text():
+                try:
+                    controller = LearningController()
+                    await controller.process_post_turn(
+                        turn_id=f"text_{session.session_id}",
+                        user_input=text_query,
+                        response=response_text,
+                    )
+                except Exception as learn_err:
+                    logger.error(
+                        f"[text_{session.session_id}] Background learning failed: {learn_err}"
+                    )
+
+            asyncio.create_task(_background_reflect_text())
+        except Exception as import_err:
+            logger.error(f"Failed to launch background text reflection: {import_err}")
 
     except Exception as e:
         logger.error(f"Error in local text processing turn: {e}")

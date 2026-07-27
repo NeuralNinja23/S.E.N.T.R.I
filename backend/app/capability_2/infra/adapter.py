@@ -4,7 +4,7 @@ import httpx
 import requests
 import asyncio
 import functools
-from app.config import REASONING_MODEL
+from app.config import REASONING_MODEL, OLLAMA_NUM_CTX
 from app.tasks.tool_schemas import TOOL_SCHEMAS
 from app.tasks.task_registry import TOOL_REGISTRY
 
@@ -60,19 +60,31 @@ class ConversationAdapter:
             return "Error: Failed to run reasoning."
 
     @staticmethod
+    def _should_enable_tools(user_content: str, system_prompt: str) -> bool:
+        """Determines whether to send heavy tool schemas based on intent keywords or tool triggers."""
+        text = user_content.lower()
+
+        tool_keywords = [
+            "search", "find", "file", "dir", "folder", "read", "write", "create", "delete",
+            "run", "execute", "tool", "memory", "remember", "forget", "list", "web", "fetch",
+            "url", "http", "system", "process", "task", "stats", "weather", "calculator", "calculate"
+        ]
+        return any(kw in text for kw in tool_keywords)
+
+    @staticmethod
     async def generate_async(
         system_prompt: str,
         user_content: str,
-        history: list | None = None,  # Bug #3: accept prior conversation turns
+        history: list | None = None,
         temperature: float = 0.7,
         stream: bool = False,
         timeout_sec: float = 120.0,
         websocket=None,
+        tools: list | None = None,
     ) -> str:
         try:
             url = "http://127.0.0.1:11434/api/chat"
 
-            # Bug #3: Build messages with full conversation history for multi-turn context
             messages = [{"role": "system", "content": system_prompt}]
             if history:
                 for entry in history:
@@ -82,6 +94,15 @@ class ConversationAdapter:
                         messages.append({"role": role, "content": content})
             messages.append({"role": "user", "content": user_content})
 
+            # Determine whether to attach tool schemas
+            use_tools = False
+            if tools is not None:
+                use_tools = True
+                tool_schemas_to_send = tools
+            elif ConversationAdapter._should_enable_tools(user_content, system_prompt):
+                use_tools = True
+                tool_schemas_to_send = TOOL_SCHEMAS
+
             # Loop for multi-turn tool calling (up to 5 turns)
             for turn in range(5):
                 payload = {
@@ -90,14 +111,15 @@ class ConversationAdapter:
                     "stream": False,
                     "think": False,  # Disable thinking unconditionally to prevent loops
                     "keep_alive": -1,
-                    "tools": TOOL_SCHEMAS,  # Pass our list of local tools
                     "options": {
                         "temperature": temperature,
-                        "num_ctx": 12288,
-                        "num_predict": 1024,  # Prevent runaway loops
+                        "num_ctx": OLLAMA_NUM_CTX,
+                        "num_predict": 512,  # Prevent runaway loops
                         "repeat_penalty": 1.1,
                     },
                 }
+                if use_tools:
+                    payload["tools"] = tool_schemas_to_send
 
                 async with httpx.AsyncClient(timeout=timeout_sec) as client:
                     res = await client.post(url, json=payload)
@@ -111,15 +133,20 @@ class ConversationAdapter:
                     message = data.get("message", {})
                     tool_calls = message.get("tool_calls", [])
 
+
                     # Bug #18: Removed blocking synchronous debug file write (full_ollama_json.json)
                     if tool_calls:
-                        # Append assistant message containing the tool calls to conversation history
-                        messages.append(message)
+                        # Append clean assistant message containing the tool calls to conversation history
+                        clean_assistant_msg = {"role": "assistant", "content": message.get("content", "")}
+                        if "tool_calls" in message:
+                            clean_assistant_msg["tool_calls"] = message["tool_calls"]
+                        messages.append(clean_assistant_msg)
 
                         for tool_call in tool_calls:
                             func_info = tool_call.get("function", {})
                             name = func_info.get("name")
                             args = func_info.get("arguments", {})
+                            tc_id = tool_call.get("id")
 
                             args_str = ", ".join(
                                 [f"{k}={json.dumps(v)}" for k, v in args.items()]
@@ -145,7 +172,6 @@ class ConversationAdapter:
                                 try:
                                     # Since tools are synchronous blocking I/O, execute in thread pool
                                     loop = asyncio.get_running_loop()
-                                    # Partially apply the arguments
                                     pfunc = functools.partial(func, **args)
                                     result = await loop.run_in_executor(None, pfunc)
                                 except Exception as exec_err:
@@ -175,11 +201,15 @@ class ConversationAdapter:
                                         f"Could not send TOOL_RESULT log: {ws_err}"
                                     )
 
-                            # Append the tool result back to the message history
-                            messages.append({"role": "tool", "content": result})
+                            # Append the tool result back to the message history with tool_call_id
+                            tool_msg = {"role": "tool", "name": name, "content": str(result)}
+                            if tc_id:
+                                tool_msg["tool_call_id"] = tc_id
+                            messages.append(tool_msg)
 
                         # Continue to the next turn to let Ollama reason on the tool results
                         continue
+
                     else:
                         # No tool calls requested, this is the final text response!
                         raw_content = message.get("content", "")
@@ -189,8 +219,10 @@ class ConversationAdapter:
             # If we completed 5 turns and still calling tools, return a warning
             return "Sentri: The query required too many nested steps to complete."
         except Exception as e:
+            print(f"DEBUG EXCEPTION: {e}", flush=True)
             logger.error(f"Failed to generate async text response: {e}")
-            return "Error: Failed to run reasoning."
+            return f"Error: {e}"
+
 
 
 def call_llm_direct(*args, **kwargs) -> str:

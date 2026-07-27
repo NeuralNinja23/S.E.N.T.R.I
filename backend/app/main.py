@@ -32,6 +32,13 @@ from app.runtime.task_runtime import task_worker_loop
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Dynamically patch system classes to capture performance and queue telemetry
+    try:
+        from app.utils.telemetry import instrument_system
+        instrument_system()
+    except Exception as telemetry_err:
+        logging.getLogger("main").error(f"Telemetry instrumentation failed: {telemetry_err}")
+
     # Start Inference Runtime Daemon
     await inference_runtime_manager.start()
 

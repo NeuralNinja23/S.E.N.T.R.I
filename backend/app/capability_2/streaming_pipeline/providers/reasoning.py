@@ -78,14 +78,16 @@ class OllamaReasoningProvider(ReasoningProvider):
                 "stream": True,  # Bug #4: Enable true streaming
                 "think": False,  # Disable thinking mode
                 "keep_alive": -1,  # Keep model in VRAM
-                "tools": TOOL_SCHEMAS,  # Pass tools list
                 "options": {
                     "temperature": 0.6,
-                    "num_ctx": 12288,
+                    "num_ctx": 4096,
                     "num_predict": 1024,  # Bug #6: cap tokens to prevent runaway voice generation
                     "repeat_penalty": 1.1,
                 },
             }
+            
+            if "Qwen" not in self.model_name:
+                payload["tools"] = TOOL_SCHEMAS
 
             try:
                 async with self._client.stream("POST", url, json=payload) as response:

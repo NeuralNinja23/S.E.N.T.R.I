@@ -16,10 +16,10 @@ _net_lock = threading.Lock()  # Bug #28: prevent race condition under concurrent
 
 
 def _get_gpu_stats() -> dict:
-    """Get GPU utilization and temperature via nvidia-smi (Windows/Linux)."""
+    """Get GPU utilization, VRAM usage, and temperature via nvidia-smi (Windows/Linux)."""
     try:
         result = subprocess.run(
-            "nvidia-smi --query-gpu=utilization.gpu,temperature.gpu --format=csv,noheader,nounits",
+            "nvidia-smi --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total --format=csv,noheader,nounits",
             capture_output=True,
             text=True,
             shell=True,
@@ -27,13 +27,22 @@ def _get_gpu_stats() -> dict:
         )
         if result.returncode == 0 and result.stdout.strip():
             parts = result.stdout.strip().split(",")
+            gpu_util = float(parts[0].strip())
+            gpu_temp = float(parts[1].strip())
+            vram_used = float(parts[2].strip())
+            vram_total = float(parts[3].strip())
+            vram_pct = round((vram_used / vram_total) * 100.0, 1) if vram_total > 0 else 0.0
             return {
-                "gpu_percent": float(parts[0].strip()),
-                "gpu_temp": float(parts[1].strip()),
+                "gpu_percent": gpu_util,
+                "gpu_temp": gpu_temp,
+                "vram_used_mb": vram_used,
+                "vram_total_mb": vram_total,
+                "vram_percent": vram_pct,
             }
     except Exception:
         pass
-    return {"gpu_percent": 0, "gpu_temp": 0}
+    return {"gpu_percent": 0, "gpu_temp": 0, "vram_used_mb": 0, "vram_total_mb": 0, "vram_percent": 0}
+
 
 
 def _get_net_speed() -> dict:
@@ -59,7 +68,7 @@ def _get_net_speed() -> dict:
 
 
 @router.get("/api/system-stats")
-def system_stats():
+async def system_stats():
     cpu_percent = psutil.cpu_percent(interval=0)
     mem = psutil.virtual_memory()
     net = _get_net_speed()
@@ -92,6 +101,9 @@ def system_stats():
     except Exception:
         pass
 
+    import asyncio
+    from app.utils.telemetry import telemetry_collector
+
     return {
         "cpu": round(cpu_percent, 1),
         "mem": round(mem.percent, 1),
@@ -106,4 +118,6 @@ def system_stats():
         "disk_total": disk_total,
         "disk_used": disk_used,
         "disk_percent": disk_percent,
+        "active_asyncio_tasks": len(asyncio.all_tasks()),
+        "telemetry": telemetry_collector.get_telemetry_dict(),
     }

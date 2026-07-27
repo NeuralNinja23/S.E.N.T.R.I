@@ -29,6 +29,21 @@ class FasterWhisperASRProvider(ASRProvider):
         pass
 
     async def transcribe(self, pcm_bytes: bytes) -> str:
+        # Resilience test hook: check for mock_asr.txt file
+        try:
+            import os
+            from pathlib import Path
+            project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+            mock_file = project_root / "Docs" / "Tests" / "System Resilience" / "mock_asr.txt"
+            if not mock_file.exists():
+                mock_file = Path("Docs/Tests/System Resilience/mock_asr.txt")
+            if mock_file.exists():
+                text = mock_file.read_text(encoding="utf-8").strip()
+                return text
+
+        except Exception:
+            pass
+
         if not pcm_bytes:
             return ""
 

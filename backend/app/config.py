@@ -11,13 +11,22 @@ CONVERSATION_ENGINE = os.getenv("CONVERSATION_ENGINE", "decoupled_pipeline")
 PIPELINE_PROVIDER = os.getenv("PIPELINE_PROVIDER", "streaming_pipeline")
 ASR_PROVIDER = os.getenv("ASR_PROVIDER", "faster_whisper")
 REASONING_PROVIDER = os.getenv("REASONING_PROVIDER", "ollama")
-REASONING_MODEL = os.getenv("REASONING_MODEL", "phi4-mini:latest")
+REASONING_MODEL = os.getenv(
+    "REASONING_MODEL",
+    "hf.co/HauhauCS/Qwen3.5-4B-Uncensored-HauhauCS-Aggressive:Q4_K_M",
+)
 TTS_PROVIDER = os.getenv("TTS_PROVIDER", "kokoro")
 TTS_SPEAKER_VOICE = os.getenv("TTS_SPEAKER_VOICE", "bm_george")
+OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "4096"))
+
 
 # Language Settings (Bug #10 + Bug #24: configurable instead of hardcoded)
 ASR_LANGUAGE = os.getenv("ASR_LANGUAGE", "en")  # Language code for Faster-Whisper ASR
 TTS_LANGUAGE = os.getenv("TTS_LANGUAGE", "en-us")  # Language code for Kokoro TTS
+
+# Learning Plane — Reflection Engine Configuration
+REFLECTION_PROVIDER = os.getenv("REFLECTION_PROVIDER", "ollama")
+REFLECTION_MODEL = os.getenv("REFLECTION_MODEL", REASONING_MODEL)
 
 
 # Vision Settings

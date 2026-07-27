@@ -245,6 +245,18 @@ class ConversationRuntime(ISpeechToSpeechModel):
 
         # 3. Context Preparation
         system_prompt = self.system_prompt_provider.build()
+        
+        # Load active behavioral state and adapt prompt/budget
+        try:
+            from app.capability_2.learning.behavior.state import BehavioralStateManager
+            from app.capability_2.learning.adaptation.adapter import BehavioralAdapter
+            
+            behavior_state = BehavioralStateManager().get_state()
+            system_prompt = BehavioralAdapter.adapt_prompt(system_prompt, behavior_state)
+        except Exception as e:
+            logger.error(f"Failed to load or adapt behavioral state: {e}")
+            behavior_state = None
+
         context.system_prompt = system_prompt
 
         # Retrieve uploaded documents context
@@ -256,6 +268,13 @@ class ConversationRuntime(ISpeechToSpeechModel):
 
             intent = self.intent_analyzer.analyze(transcript)
             categories, budget = self.retrieval_planner.plan(intent)
+            
+            if behavior_state:
+                try:
+                    budget = BehavioralAdapter.adapt_planning_budget(budget, behavior_state)
+                except Exception as e:
+                    logger.error(f"Failed to adapt planning budget: {e}")
+                    
             structured_context = retrieve_memory_context(categories, budget)
         except Exception as e:
             logger.error(f"Failed to retrieve structured memories: {e}")
@@ -518,6 +537,29 @@ class ConversationRuntime(ISpeechToSpeechModel):
                 f"  {'─'*40}\n"
                 f"  Total Turn Latency:   {t_total:>8.0f} ms"
             )
+
+            # ── Learning Plane: Background Reflection & Evaluation ────────
+            # Runs asynchronously after the user-facing response is complete.
+            # Must never block or affect user-perceived latency.
+            try:
+                from app.capability_2.learning.controller import LearningController
+
+                async def _background_reflect():
+                    try:
+                        controller = LearningController()
+                        await controller.process_post_turn(
+                            turn_id=turn_id,
+                            user_input=context.transcript,
+                            response=context.reasoning_response,
+                            ttfa_ms=t_ttfa,
+                            interrupted=context.cancel_token.is_set(),
+                        )
+                    except Exception as learn_err:
+                        logger.error(f"[{turn_id}] Background learning failed: {learn_err}")
+
+                asyncio.create_task(_background_reflect())
+            except Exception as import_err:
+                logger.error(f"[{turn_id}] Failed to launch background reflection: {import_err}")
 
     async def process_audio_stream(
         self, audio_generator: AsyncGenerator[bytes, None]
